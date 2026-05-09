@@ -680,18 +680,34 @@ function drawChainSlots(){
   const totalW=5*W+4*GAP;
   const sx=rr((GW-totalW)/2), sy=26;
   for(let i=0;i<5;i++){
-    const bx=sx+i*(W+GAP), has=items[i];
-    ctx.fillStyle=has?'rgba(30,20,0,0.84)':'rgba(8,6,2,0.72)';
+    const bx=sx+i*(W+GAP);
+    const has=items[i];
+    const lost=!has&&lostItems[i];
+    // 背景: 所持=金, ロスト=赤み, 未入手=暗
+    ctx.fillStyle=has?'rgba(30,20,0,0.84)':lost?'rgba(40,4,4,0.84)':'rgba(8,6,2,0.72)';
     ctx.fillRect(bx,sy,W,H);
-    ctx.fillStyle=has?CHAIN[i].col:'#2A2018';
+    // カラーバー
+    ctx.fillStyle=has?CHAIN[i].col:lost?'#882020':'#2A2018';
     ctx.fillRect(bx,sy,W,2);
+    // アイコン
     ctx.save();
     ctx.translate(bx+W/2,sy+H/2+3);
-    if(!has) ctx.globalAlpha=0.20;
+    ctx.globalAlpha=has?1.0:lost?0.40:0.20;
+    if(lost){
+      // ロスト: 赤みのフィルター
+      ctx.filter='sepia(1) saturate(4) hue-rotate(310deg)';
+    }
     drawChainIcon(i,0.52);
-    ctx.globalAlpha=1;
+    ctx.filter='none'; ctx.globalAlpha=1;
     ctx.restore();
-    ctx.fillStyle=has?CHAIN[i].col:'#3A2C1A';
+    // ロストマーク（×）
+    if(lost){
+      ctx.fillStyle='rgba(220,50,50,0.88)';
+      ctx.font='bold 11px monospace'; ctx.textAlign='center';
+      ctx.fillText('✕',bx+W/2,sy+H/2+5);
+    }
+    // 名前ラベル
+    ctx.fillStyle=has?CHAIN[i].col:lost?'#A05050':'#3A2C1A';
     ctx.font='7px monospace'; ctx.textAlign='center';
     ctx.fillText(CHAIN[i].name,bx+W/2,sy+H+8);
     // 矢印
@@ -712,7 +728,23 @@ function drawChainSlots(){
 function drawNPC(x,y,cidx,fr){
   const c=CHAIN[cidx];
   const fy=rr(y+Math.sin(fr*0.09)*3);
-  const nc=['#3A6818','#C86810','#1A4898','#8A5818'][cidx-1];
+  const nc=['#8A6020','#3A6818','#C86810','#1A4898','#8A5818'][cidx];
+  // 交換可否を判定（スピーチ用）
+  const hr=items.reduce((m,v,i)=>v?i:m,-1);
+  let canTrade, line1, line2;
+  if(cidx===0){
+    canTrade=!items[0];
+    line1=canTrade?'わら':'もう持ってる';
+    line2=canTrade?'タダでどうぞ！':'(わら済)';
+  } else if(items[cidx]){
+    canTrade=false; line1=c.name; line2='もう持ってる';
+  } else if(hr===cidx-1){
+    canTrade=true; line1=CHAIN[cidx-1].name+'→'+c.name; line2='交換しよう！';
+  } else if(hr>cidx){
+    canTrade=true; line1=c.name; line2='タダでどうぞ！';
+  } else {
+    canTrade=false; line1='？？？'; line2=(cidx>0?CHAIN[cidx-1].name:'わら')+'が必要';
+  }
   // グロー
   ctx.fillStyle=c.col+'2A';
   ctx.beginPath();ctx.arc(rr(x+16),rr(fy+14),28,0,Math.PI*2);ctx.fill();
@@ -729,10 +761,9 @@ function drawNPC(x,y,cidx,fr){
   ctx.fillRect(rr(x+8),rr(fy-13),3,3);
   ctx.fillRect(rr(x+13),rr(fy-13),3,3);
   // 口
-  const hasReq=items[cidx-1];
-  ctx.fillStyle=hasReq?'#C87040':'#8A4030';
+  ctx.fillStyle=canTrade?'#C87040':'#8A4030';
   ctx.fillRect(rr(x+9),rr(fy-8),6,2);
-  if(hasReq){ctx.fillRect(rr(x+9),rr(fy-7),2,2);ctx.fillRect(rr(x+13),rr(fy-7),2,2);}
+  if(canTrade){ctx.fillRect(rr(x+9),rr(fy-7),2,2);ctx.fillRect(rr(x+13),rr(fy-7),2,2);}
   // 腕
   ctx.fillStyle=nc;
   ctx.fillRect(rr(x-2),rr(fy-2),7,8);ctx.fillRect(rr(x+17),rr(fy-2),7,8);
@@ -745,15 +776,15 @@ function drawNPC(x,y,cidx,fr){
   ctx.beginPath();ctx.ellipse(rr(x+14),GY+3,16,4,0,0,Math.PI*2);ctx.fill();
   // 吹き出し
   const bx=rr(x+30), by=rr(fy-40);
-  ctx.fillStyle='rgba(255,252,220,0.96)';ctx.fillRect(bx,by,58,32);
-  ctx.fillStyle=c.col;ctx.fillRect(bx,by,58,3);
+  ctx.fillStyle='rgba(255,252,220,0.96)';ctx.fillRect(bx,by,62,32);
+  ctx.fillStyle=c.col;ctx.fillRect(bx,by,62,3);
   ctx.fillStyle='rgba(255,252,220,0.96)';
   ctx.beginPath();ctx.moveTo(bx,by+13);ctx.lineTo(bx-7,by+17);ctx.lineTo(bx,by+22);ctx.fill();
-  ctx.fillStyle=hasReq?'#1A4008':'#880808';
-  ctx.font='bold 9px monospace';ctx.textAlign='center';
-  ctx.fillText(hasReq?c.name:'？？？',bx+29,by+15);
+  ctx.fillStyle=canTrade?'#1A4008':'#880808';
+  ctx.font='bold 8px monospace';ctx.textAlign='center';
+  ctx.fillText(line1,bx+31,by+14);
   ctx.font='7px monospace';
-  ctx.fillText(hasReq?'もらえる！':CHAIN[cidx-1].name+'が必要',bx+29,by+27);
+  ctx.fillText(line2,bx+31,by+26);
   ctx.textAlign='left';
 }
 
@@ -1132,7 +1163,7 @@ function drawOihagi(ex,ey,phase,frame){
 let state='start';
 let dist,speed,py,vy,grounded,lives,invuln,invT,frame,entities,spawnD,stageIdx,msg,msgT;
 let bridgeActive,bridgeStartDist,bridgeHoles,bridgeDebris,bridgeWarnDone;
-let items,clearRank,npcPopT,npcPopMsg;
+let items,lostItems,clearRank,npcPopT,npcPopMsg;
 
 function initGame(){
   dist=0; speed=5; py=GY-46; vy=0; grounded=true;
@@ -1141,6 +1172,7 @@ function initGame(){
   bridgeActive=false; bridgeStartDist=BRIDGE_EVERY;
   bridgeHoles=[]; bridgeDebris=[]; bridgeWarnDone=false;
   items=[true,false,false,false,false];
+  lostItems=[false,false,false,false,false];
   clearRank=4; npcPopT=0; npcPopMsg='';
   state='playing';
 }
@@ -1149,8 +1181,22 @@ function spawnEntity(){
   if(dist-spawnD < 108+Math.random()*135) return;
   spawnD=dist;
   const r=Math.random(); let e=null;
-  const nextChain=items.findIndex((v,i)=>i>0&&!v); // 次に必要なチェーンアイテム
-  if(r>0.88 && nextChain>0) e={type:'npc',chainIdx:nextChain,x:GW+10,y:GY-56,vy:0,alive:true};
+  if(r>0.88){
+    // NPC spawn: pick a useful chain NPC
+    const highestRank=items.reduce((m,v,i)=>v?i:m,-1);
+    let chainIdx;
+    if(highestRank<0){
+      chainIdx=0;
+    } else if(highestRank<4&&Math.random()<0.55){
+      chainIdx=highestRank+1; // upgrade opportunity
+    } else {
+      const missing=items.map((v,i)=>!v?i:-1).filter(i=>i>=0);
+      chainIdx=missing.length>0
+        ?missing[Math.floor(Math.random()*missing.length)]
+        :(highestRank<4?highestRank+1:0);
+    }
+    e={type:'npc',chainIdx,x:GW+10,y:GY-56,vy:0,alive:true};
+  }
   else if(r>0.80) e={type:'heart',sub:'heart',x:GW+10,y:GY-66,vy:0,alive:true};
   else{
     const o=Math.random();
@@ -1211,11 +1257,11 @@ function updateBridge(){
       const wi=raw%BPLANK_PITCH;
       if(pi<bridgeHoles.length&&bridgeHoles[pi]&&wi<BPLANK_W){
         invuln=true; invT=120; lives=Math.max(0,lives-1);
-        const ownedB=items.map((v,i)=>v&&i>0?i:-1).filter(i=>i>=0);
+        const ownedB=items.map((v,i)=>v?i:-1).filter(i=>i>=0);
         let bridgeLostName='';
         if(ownedB.length>0){
           const lostB=ownedB[Math.floor(Math.random()*ownedB.length)];
-          items[lostB]=false; bridgeLostName=CHAIN[lostB].name;
+          items[lostB]=false; lostItems[lostB]=true; bridgeLostName=CHAIN[lostB].name;
         }
         spawnBridgeDebris(PX+13);
         SFX.hit();
@@ -1355,18 +1401,20 @@ function update(){
         if(aabb(px_,py_,pw,ph,ex,ey,ew,eh)){
           e.alive=false; invuln=true; SFX.hit();
           if(e.sub==='oihagi'){
-            items=[true,false,false,false,false]; invT=180;
-            msg='追い剥ぎに持ち物を全部奪われた！'; msgT=280;
+            // 全没収→何も持っていない状態（わらNPCで再起可）
+            for(let oi=0;oi<5;oi++) if(items[oi]) lostItems[oi]=true;
+            items=[false,false,false,false,false]; invT=180;
+            msg='追い剥ぎに全部奪われた！わらNPCを探せ！'; msgT=300;
             [440,330,220].forEach((f,i)=>setTimeout(()=>beep(f,0.18,'sawtooth',0.14),i*90));
           } else {
-            const owned=items.map((v,i)=>v&&i>0?i:-1).filter(i=>i>=0);
+            const owned=items.map((v,i)=>v?i:-1).filter(i=>i>=0);
             if(owned.length>0){
-              const lost=owned[Math.floor(Math.random()*owned.length)];
-              items[lost]=false; invT=110;
-              msg=CHAIN[lost].name+'を落とした！'; msgT=200;
+              const li=owned[Math.floor(Math.random()*owned.length)];
+              items[li]=false; lostItems[li]=true; invT=110;
+              msg=CHAIN[li].name+'を落とした！'; msgT=200;
             } else {
               lives=Math.max(0,lives-1); invT=120;
-              msg='わらを落とした！ライフ-1'; msgT=180;
+              msg='ライフ-1！'; msgT=180;
               if(lives<=0){state='gameover'; SFX.over();}
             }
           }
@@ -1375,17 +1423,30 @@ function update(){
         if(aabb(px_,py_,pw,ph, e.x+4,e.y+4,20,44)){
           e.alive=false;
           const ci=e.chainIdx;
-          if(items[ci-1]){
-            if(!items[ci]){
-              items[ci]=true;
-              npcPopMsg=CHAIN[ci-1].name+'→'+CHAIN[ci].name+'！交換成立！';
+          const hr=items.reduce((m,v,i)=>v?i:m,-1); // highest rank owned
+          if(ci===0){
+            // わらNPC: 無条件でわら入手（未所持の場合のみ）
+            if(!items[0]){
+              items[0]=true; lostItems[0]=false;
+              npcPopMsg='わら を1本もらった！スタート！';
             } else {
-              npcPopMsg=CHAIN[ci].name+'はもう持っている！';
+              npcPopMsg='わら はすでに持っている！';
             }
+          } else if(items[ci]){
+            npcPopMsg=CHAIN[ci].name+'はもう持っている！';
+          } else if(hr===ci-1){
+            // 上位交換: 最高ランクを消費して次を入手
+            items[ci-1]=false;
+            items[ci]=true; lostItems[ci]=false;
+            npcPopMsg=CHAIN[ci-1].name+'→'+CHAIN[ci].name+'！交換成立！';
+          } else if(hr>ci){
+            // 下位の無償回収: 消費なしで入手
+            items[ci]=true; lostItems[ci]=false;
+            npcPopMsg=CHAIN[ci].name+' をタダでもらった！';
           } else {
-            npcPopMsg=CHAIN[ci-1].name+'があれば交換してやるんだが…';
+            npcPopMsg=(ci>0?CHAIN[ci-1].name+'が':'')+' あれば交換してやるんだが…';
           }
-          npcPopT=200; SFX.get();
+          npcPopT=220; SFX.get();
         }
       } else if(e.type==='heart'){
         if(aabb(px_,py_,pw,ph, e.x+m,e.y+m,14,15)){
