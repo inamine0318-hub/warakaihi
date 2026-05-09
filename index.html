@@ -31,20 +31,30 @@ html,body{
 <div id="dbg" style="position:fixed;top:0;left:0;right:0;background:#c00;color:#fff;font-size:15px;padding:6px 8px;z-index:9999">HTML OK / JS未起動</div>
 <script>
 'use strict';
-document.getElementById('dbg').textContent='JS起動OK';
+const dbg=document.getElementById('dbg');
+dbg.textContent='JS起動OK';
+window.onerror=function(msg,src,line,col){
+  dbg.textContent='JSエラー: '+msg+' (行'+line+')';
+  return true;
+};
 
 // ── CANVAS SETUP ──────────────────────────────────────────
-const GW=360; let GH=640; // GH updated dynamically in resize()
+const GW=360; let GH=640;
+dbg.textContent='canvas取得中...';
 const canvas=document.getElementById('game');
+dbg.textContent='canvas='+(canvas?'OK':'NULL ← ここで失敗');
 const wrap=document.getElementById('wrap');
+dbg.textContent='ctx取得中...';
 const ctx=canvas.getContext('2d');
+dbg.textContent='ctx='+(ctx?'OK':'NULL ← getContext失敗');
 ctx.imageSmoothingEnabled=false;
 canvas.width=GW; canvas.height=GH;
+dbg.textContent='canvas設定OK ('+GW+'x'+GH+')';
 
 function resize(){
+  dbg.textContent='resize()実行中 vw='+window.innerWidth+' vh='+window.innerHeight;
   const vw=window.innerWidth, vh=window.innerHeight;
   if(vw<=vh){
-    // Portrait: fill entire screen with no black bars
     const scale=vw/GW;
     GH=Math.max(480, Math.round(vh/scale));
     GY=Math.round(GH*0.845);
@@ -53,7 +63,6 @@ function resize(){
     canvas.style.width=vw+'px'; canvas.style.height=vh+'px';
     wrap.style.width=vw+'px'; wrap.style.height=vh+'px';
   } else {
-    // Landscape/desktop: letterbox with aspect ratio maintained
     GH=580;
     GY=Math.round(GH*0.845);
     const s=Math.min(vw/GW, vh/GH);
@@ -63,6 +72,7 @@ function resize(){
     canvas.style.width=cw+'px'; canvas.style.height=ch+'px';
     wrap.style.width=cw+'px'; wrap.style.height=ch+'px';
   }
+  dbg.textContent='resize()完了 GH='+GH+' GY='+GY;
 }
 resize();
 window.addEventListener('resize',resize);
@@ -2206,7 +2216,9 @@ document.addEventListener('keydown',e=>{
 document.addEventListener('touchstart',e=>{e.preventDefault(); doAction();},{passive:false});
 document.addEventListener('click',()=>doAction());
 
+dbg.textContent='rAF呼び出し前 (ここまでOK)';
 requestAnimationFrame(loop);
+dbg.textContent='rAF登録完了';
 </script>
 </body>
 </html>
