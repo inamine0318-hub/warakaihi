@@ -39,7 +39,7 @@ window.onerror=function(msg,src,line,col){
 };
 
 // ── CANVAS SETUP ──────────────────────────────────────────
-const GW=360; let GH=640;
+const GW=360; let GH=640; let GY=540;
 dbg.textContent='canvas取得中...';
 const canvas=document.getElementById('game');
 dbg.textContent='canvas='+(canvas?'OK':'NULL ← ここで失敗');
@@ -89,7 +89,6 @@ function tryFullscreen(){
 }
 
 // ── CONSTANTS ─────────────────────────────────────────────
-let GY=540; // updated dynamically in resize() (~84% of GH)
 const PX=90, G=0.90, JF=-17;
 const PSCALE=2.0;   // player visual scale (larger for portrait)
 const ESCALE=1.7;   // enemy visual scale
