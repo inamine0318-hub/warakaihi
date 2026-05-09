@@ -61,7 +61,9 @@ function tryFullscreen(){
 }
 
 // ── CONSTANTS ─────────────────────────────────────────────
-const GY=290, PX=108, G=0.72, JF=-15;
+const GY=290, PX=108, G=0.90, JF=-17;
+const PSCALE=1.5;   // player visual scale
+const ESCALE=1.35;  // enemy visual scale
 
 const STAGES=[
   {name:'昼の村道',  minD:   0,w:'sunny',sky:'#5BA8D8',hor:'#A8D878',gnd:'#7A5C1E',gndD:'#5A3E0E',mtn:'#2878B8',tree:'#1E6818'},
@@ -1085,11 +1087,13 @@ function drawOihagi(ex,ey,phase,frame){
 // ══════════════════════════════════════════════════════════
 let state='start';
 let dist,speed,py,vy,grounded,lives,itemLv,invuln,invT,frame,entities,spawnD,stageIdx,msg,msgT;
+let itemPopT,itemPopFrom,itemPopTo;
 
 function initGame(){
   dist=0; speed=5; py=GY-46; vy=0; grounded=true;
   lives=3; itemLv=0; invuln=false; invT=0; frame=0;
   entities=[]; spawnD=0; stageIdx=0; msg=''; msgT=0;
+  itemPopT=0; itemPopFrom=0; itemPopTo=0;
   state='playing';
 }
 
@@ -1129,6 +1133,7 @@ function update(){
 
   if(invuln&&--invT<=0) invuln=false;
   if(msgT>0&&--msgT===0) msg='';
+  if(itemPopT>0) --itemPopT;
 
   spawnEntity();
   const sp=speed;
@@ -1164,7 +1169,9 @@ function update(){
       } else if(e.type==='item'){
         if(aabb(px_,py_,pw,ph, e.x+m,e.y+m,18,13)){
           e.alive=false;
+          itemPopFrom=itemLv;
           const nl=Math.min(8,itemLv+1); itemLv=nl;
+          itemPopTo=nl; itemPopT=110;
           msg=ITEMS[nl].desc; msgT=200; SFX.get();
         }
       } else if(e.type==='heart'){
@@ -1176,6 +1183,76 @@ function update(){
     }
     return e.alive;
   });
+}
+
+// ══════════════════════════════════════════════════════════
+// DRAW: ITEM BADGE (キャラ頭上の所持アイテム表示)
+// ══════════════════════════════════════════════════════════
+function drawItemBadge(py,lv){
+  const col=ITEMS[lv].col;
+  const label=ITEMS[lv].name;
+  // スケール後のキャラ頭上座標
+  const topY=rr(GY+(py-GY-20)*PSCALE)-18;
+  const cx=rr(PX+13);
+  const W=36, H=16;
+  // 吹き出し背景
+  ctx.fillStyle='rgba(8,4,0,0.86)';
+  ctx.fillRect(cx-W/2,topY-H,W,H);
+  // 上部カラーバー
+  ctx.fillStyle=col;
+  ctx.fillRect(cx-W/2,topY-H,W,2);
+  // アイテム名
+  ctx.fillStyle='#F0E080';
+  ctx.font='bold 10px monospace';
+  ctx.textAlign='center';
+  ctx.fillText(label,cx,topY-H+12);
+  // 吹き出しの三角
+  ctx.fillStyle='rgba(8,4,0,0.86)';
+  ctx.beginPath();
+  ctx.moveTo(cx-4,topY); ctx.lineTo(cx+4,topY); ctx.lineTo(cx,topY+5);
+  ctx.fill();
+  ctx.textAlign='left';
+}
+
+// ══════════════════════════════════════════════════════════
+// DRAW: ITEM POPUP (アイテム交換演出)
+// ══════════════════════════════════════════════════════════
+function drawItemPopup(){
+  if(itemPopT<=0) return;
+  const t=itemPopT/110;          // 1.0 → 0.0
+  const a=Math.min(1,t*4);
+  const sc=1+(1-t)*0.25;
+  const cx=GW/2, cy=GH/2-18;
+
+  // パネル背景
+  ctx.fillStyle=`rgba(8,4,0,${0.88*a})`;
+  ctx.fillRect(cx-140,cy-26,280,44);
+  ctx.fillStyle=`rgba(240,180,0,${0.6*a})`;
+  ctx.fillRect(cx-140,cy-26,280,2);
+  ctx.fillRect(cx-140,cy+16,280,2);
+
+  // テキスト（ズームアニメ）
+  ctx.save();
+  ctx.translate(cx,cy);
+  ctx.scale(sc,sc);
+  ctx.fillStyle=`rgba(255,220,60,${a})`;
+  ctx.font='bold 20px monospace';
+  ctx.textAlign='center';
+  ctx.fillText(ITEMS[itemPopFrom].name+' → '+ITEMS[itemPopTo].name+'！',0,0);
+  ctx.restore();
+  ctx.textAlign='left';
+
+  // キラキラパーティクル
+  if(t>0.35){
+    const seed=Math.floor(itemPopT/2);
+    const pcols=['#FFE040','#FF9020','#80FF60','#40E8FF','#FF60C0'];
+    for(let i=0;i<12;i++){
+      const px2=cx-120+((seed*41+i*67)%240);
+      const py2=cy-22+((seed*59+i*37)%36);
+      ctx.fillStyle=pcols[i%5];
+      ctx.fillRect(px2,py2,2,2);
+    }
+  }
 }
 
 // ══════════════════════════════════════════════════════════
@@ -1300,11 +1377,24 @@ function loop(){
       if(e.sub==='rock')                drawRock(e.x,e.y);
       else if(e.sub==='kite')           drawKite(e.x,e.y,frame);
       else if(e.sub.startsWith('crow')) drawCrow(e.x,e.y,e.sub,frame);
-      else if(e.sub==='oihagi')         drawOihagi(e.x,e.y,e.phase,frame);
+      else if(e.sub==='oihagi'){
+        // 追い剥ぎをESCALEでスケールアップ（足元基準）
+        const ecx=rr(e.x+15);
+        ctx.save();
+        ctx.translate(ecx,GY); ctx.scale(ESCALE,ESCALE); ctx.translate(-ecx,-GY);
+        drawOihagi(e.x,e.y,e.phase,frame);
+        ctx.restore();
+      }
       else if(e.sub==='item')           drawCollectible(e.x,e.y,Math.min(itemLv+1,8),frame);
       else if(e.sub==='heart')          drawHeart(e.x,e.y,frame);
     }
+    // プレイヤーをPSCALEでスケールアップ（足元基準）
+    ctx.save();
+    ctx.translate(rr(PX+13),GY); ctx.scale(PSCALE,PSCALE); ctx.translate(-rr(PX+13),-GY);
     drawPlayer(py,frame,invuln,itemLv);
+    ctx.restore();
+    drawItemBadge(py,itemLv);
+    drawItemPopup();
     drawHUD();
     drawMessage();
   } else if(state==='gameover'){
