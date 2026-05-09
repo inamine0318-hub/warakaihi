@@ -1167,7 +1167,7 @@ let items,lostItems,clearRank,npcPopT,npcPopMsg;
 
 function initGame(){
   dist=0; speed=5; py=GY-46; vy=0; grounded=true;
-  lives=3; invuln=false; invT=0; frame=0;
+  lives=5; invuln=false; invT=0; frame=0;
   entities=[]; spawnD=0; stageIdx=0; msg=''; msgT=0;
   bridgeActive=false; bridgeStartDist=BRIDGE_EVERY;
   bridgeHoles=[]; bridgeDebris=[]; bridgeWarnDone=false;
@@ -1198,6 +1198,21 @@ function spawnEntity(){
     e={type:'npc',chainIdx,x:GW+10,y:GY-56,vy:0,alive:true};
   }
   else if(r>0.80) e={type:'heart',sub:'heart',x:GW+10,y:GY-66,vy:0,alive:true};
+  else if(r>0.74){
+    // フィールドアイテムドロップ（低確率）
+    const hr=items.reduce((m,v,i)=>v?i:m,-1);
+    let dropIdx;
+    if(hr>0){
+      const collectible=[];
+      for(let i=0;i<hr;i++) if(!items[i]) collectible.push(i);
+      dropIdx=(collectible.length>0&&Math.random()<0.65)
+        ?collectible[Math.floor(Math.random()*collectible.length)]
+        :Math.floor(Math.random()*5);
+    } else {
+      dropIdx=Math.floor(Math.random()*5);
+    }
+    e={type:'drop',chainIdx:dropIdx,x:GW+10,y:GY-36,vy:0,alive:true};
+  }
   else{
     const o=Math.random();
     if(o<0.22)      e={type:'obstacle',sub:'rock',       x:GW,    y:GY-20,vy:0,alive:true};
@@ -1401,22 +1416,25 @@ function update(){
         if(aabb(px_,py_,pw,ph,ex,ey,ew,eh)){
           e.alive=false; invuln=true; SFX.hit();
           if(e.sub==='oihagi'){
-            // 全没収→何も持っていない状態（わらNPCで再起可）
+            // HP-1 + 全アイテム没収
+            lives=Math.max(0,lives-1); invT=180;
             for(let oi=0;oi<5;oi++) if(items[oi]) lostItems[oi]=true;
-            items=[false,false,false,false,false]; invT=180;
-            msg='追い剥ぎに全部奪われた！わらNPCを探せ！'; msgT=300;
+            items=[false,false,false,false,false];
+            msg='追い剥ぎに全部奪われた！HP-1'; msgT=300;
             [440,330,220].forEach((f,i)=>setTimeout(()=>beep(f,0.18,'sawtooth',0.14),i*90));
+            if(lives<=0){state='gameover'; SFX.over();}
           } else {
+            // HP-1 + ランダム1アイテムロスト
+            lives=Math.max(0,lives-1); invT=110;
             const owned=items.map((v,i)=>v?i:-1).filter(i=>i>=0);
             if(owned.length>0){
               const li=owned[Math.floor(Math.random()*owned.length)];
-              items[li]=false; lostItems[li]=true; invT=110;
-              msg=CHAIN[li].name+'を落とした！'; msgT=200;
+              items[li]=false; lostItems[li]=true;
+              msg=CHAIN[li].name+'を落とした！HP-1'; msgT=200;
             } else {
-              lives=Math.max(0,lives-1); invT=120;
-              msg='ライフ-1！'; msgT=180;
-              if(lives<=0){state='gameover'; SFX.over();}
+              msg='HP-1！'; msgT=160;
             }
+            if(lives<=0){state='gameover'; SFX.over();}
           }
         }
       } else if(e.type==='npc'){
@@ -1448,6 +1466,23 @@ function update(){
           }
           npcPopT=220; SFX.get();
         }
+      } else if(e.type==='drop'){
+        if(aabb(px_,py_,pw,ph, e.x+2,e.y+2,16,16)){
+          e.alive=false;
+          const ci=e.chainIdx;
+          const hr=items.reduce((m,v,i)=>v?i:m,-1);
+          if(items[ci]){
+            npcPopMsg=CHAIN[ci].name+'はもう持っている！';
+          } else if(hr>ci){
+            // 最高ランク未満: 無償入手
+            items[ci]=true; lostItems[ci]=false;
+            npcPopMsg=CHAIN[ci].name+' を拾った！';
+          } else {
+            // 上位アイテム: NPCと交換が必要
+            npcPopMsg=CHAIN[ci].name+'はNPCと交換しよう！';
+          }
+          npcPopT=200; SFX.get();
+        }
       } else if(e.type==='heart'){
         if(aabb(px_,py_,pw,ph, e.x+m,e.y+m,14,15)){
           e.alive=false; lives=Math.min(5,lives+1);
@@ -1457,6 +1492,50 @@ function update(){
     }
     return e.alive;
   });
+}
+
+// ══════════════════════════════════════════════════════════
+// DRAW: FIELD ITEM DROP（フィールド拾得アイテム）
+// ══════════════════════════════════════════════════════════
+function drawFieldDrop(x,y,chainIdx,fr){
+  const c=CHAIN[chainIdx];
+  const fy=rr(y+Math.sin(fr*0.11)*4);
+  const hr=items.reduce((m,v,i)=>v?i:m,-1);
+  const canGet=!items[chainIdx]&&hr>chainIdx;
+  // グロー
+  ctx.fillStyle=c.col+(canGet?'38':'18');
+  ctx.beginPath();ctx.arc(rr(x+10),rr(fy+10),18,0,Math.PI*2);ctx.fill();
+  // 枠
+  ctx.fillStyle='rgba(24,16,0,0.90)';
+  ctx.fillRect(rr(x),rr(fy),20,20);
+  ctx.fillStyle=canGet?c.col:'#4A3820';
+  ctx.fillRect(rr(x),rr(fy),20,2);
+  ctx.fillRect(rr(x),rr(fy+18),20,2);
+  ctx.fillRect(rr(x),rr(fy),2,20);
+  ctx.fillRect(rr(x+18),rr(fy),2,20);
+  // アイコン
+  ctx.save();
+  ctx.translate(rr(x+10),rr(fy+12));
+  ctx.globalAlpha=canGet?1.0:0.35;
+  drawChainIcon(chainIdx,0.44);
+  ctx.globalAlpha=1; ctx.restore();
+  // 上位ブロック表示（×マーク）
+  if(!canGet&&!items[chainIdx]){
+    ctx.fillStyle='rgba(180,60,60,0.85)';
+    ctx.font='bold 10px monospace'; ctx.textAlign='center';
+    ctx.fillText('×',rr(x+10),rr(fy+13));
+    ctx.textAlign='left';
+  }
+  // スパークル
+  if(canGet){
+    const sp=Math.floor(fr*0.18+chainIdx*1.3)%4;
+    const spos=[[x-4,fy+6],[x+23,fy+6],[x+8,fy-5],[x+12,fy+24]][sp];
+    ctx.fillStyle=c.col;
+    ctx.fillRect(rr(spos[0]),rr(spos[1]),2,2);
+  }
+  // 影
+  ctx.fillStyle='rgba(0,0,0,0.18)';
+  ctx.beginPath();ctx.ellipse(rr(x+10),GY+3,11,3,0,0,Math.PI*2);ctx.fill();
 }
 
 // ══════════════════════════════════════════════════════════
@@ -1776,6 +1855,7 @@ function loop(){
     for(const e of entities){
       if(!e.alive) continue;
       if(e.type==='npc')                drawNPC(e.x,e.y,e.chainIdx,frame);
+      else if(e.type==='drop')          drawFieldDrop(e.x,e.y,e.chainIdx,frame);
       else if(e.sub==='rock')           drawRock(e.x,e.y);
       else if(e.sub==='kite')           drawKite(e.x,e.y,frame);
       else if(e.sub&&e.sub.startsWith('crow')) drawCrow(e.x,e.y,e.sub,frame);
