@@ -2129,6 +2129,8 @@ stageIdx=0; frame=0;
 function loop(){
   try{
   ctx.clearRect(0,0,GW,GH);
+  // DIAG: 緑帯 (描画確認)
+  ctx.fillStyle='#00FF00'; ctx.fillRect(0,0,GW,6);
 
   if(state==='ending'){
     updateEnding();
