@@ -2127,6 +2127,7 @@ function drawGameOverScreen(){
 stageIdx=0; frame=0;
 
 function loop(){
+  try{
   ctx.clearRect(0,0,GW,GH);
 
   if(state==='ending'){
@@ -2174,6 +2175,13 @@ function loop(){
       drawStartScreen();
       frame++;
     }
+  }
+  }catch(err){
+    ctx.fillStyle='#000'; ctx.fillRect(0,0,GW,GH);
+    ctx.fillStyle='#FF4040'; ctx.font='bold 12px monospace'; ctx.textAlign='left';
+    const lines=String(err).match(/.{1,38}/g)||[];
+    lines.forEach((l,i)=>ctx.fillText(l,8,24+i*16));
+    ctx.textAlign='left';
   }
   requestAnimationFrame(loop);
 }
