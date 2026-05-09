@@ -32,7 +32,7 @@ html,body{
 'use strict';
 
 // ── CANVAS SETUP ──────────────────────────────────────────
-const GW=640,GH=360;
+const GW=360; let GH=640; // GH updated dynamically in resize()
 const canvas=document.getElementById('game');
 const wrap=document.getElementById('wrap');
 const ctx=canvas.getContext('2d');
@@ -41,10 +41,26 @@ canvas.width=GW; canvas.height=GH;
 
 function resize(){
   const vw=window.innerWidth, vh=window.innerHeight;
-  const s=Math.min(vw/GW, vh/GH);
-  const cw=Math.floor(GW*s), ch=Math.floor(GH*s);
-  canvas.style.width=cw+'px'; canvas.style.height=ch+'px';
-  wrap.style.width=cw+'px';   wrap.style.height=ch+'px';
+  if(vw<=vh){
+    // Portrait: fill entire screen with no black bars
+    const scale=vw/GW;
+    GH=Math.max(480, Math.round(vh/scale));
+    GY=Math.round(GH*0.845);
+    canvas.width=GW; canvas.height=GH;
+    ctx.imageSmoothingEnabled=false;
+    canvas.style.width=vw+'px'; canvas.style.height=vh+'px';
+    wrap.style.width=vw+'px'; wrap.style.height=vh+'px';
+  } else {
+    // Landscape/desktop: letterbox with aspect ratio maintained
+    GH=580;
+    GY=Math.round(GH*0.845);
+    const s=Math.min(vw/GW, vh/GH);
+    const cw=Math.round(GW*s), ch=Math.round(GH*s);
+    canvas.width=GW; canvas.height=GH;
+    ctx.imageSmoothingEnabled=false;
+    canvas.style.width=cw+'px'; canvas.style.height=ch+'px';
+    wrap.style.width=cw+'px'; wrap.style.height=ch+'px';
+  }
 }
 resize();
 window.addEventListener('resize',resize);
@@ -61,9 +77,10 @@ function tryFullscreen(){
 }
 
 // ── CONSTANTS ─────────────────────────────────────────────
-const GY=290, PX=108, G=0.90, JF=-17;
-const PSCALE=1.5;   // player visual scale
-const ESCALE=1.35;  // enemy visual scale
+let GY=540; // updated dynamically in resize() (~84% of GH)
+const PX=90, G=0.90, JF=-17;
+const PSCALE=2.0;   // player visual scale (larger for portrait)
+const ESCALE=1.7;   // enemy visual scale
 const BRIDGE_EVERY=550,BRIDGE_LEN=280;
 const BPLANK_W=40,BPLANK_PITCH=50,BSCROLL=6.0;
 const GOAL_DIST=2000;
@@ -124,36 +141,37 @@ function drawBG(dist,si){
   sky.addColorStop(0,s.sky); sky.addColorStop(1,s.hor);
   ctx.fillStyle=sky; ctx.fillRect(0,0,GW,GY);
 
-  // Celestial bodies
+  // Celestial bodies (positions relative to GW/GY)
   if(si===0){
     // Sun with rays
     ctx.fillStyle='#F8E840';
-    ctx.beginPath(); ctx.arc(565,44,20,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(GW-44,44,20,0,Math.PI*2); ctx.fill();
     ctx.fillStyle='rgba(248,232,64,0.18)';
-    ctx.beginPath(); ctx.arc(565,44,34,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(GW-44,44,34,0,Math.PI*2); ctx.fill();
   } else if(si===1){
     ctx.fillStyle='rgba(240,100,0,0.35)';
-    ctx.beginPath(); ctx.arc(560,72,56,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(GW-40,72,56,0,Math.PI*2); ctx.fill();
     ctx.fillStyle='rgba(240,60,0,0.20)';
-    ctx.beginPath(); ctx.arc(560,72,80,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(GW-40,72,80,0,Math.PI*2); ctx.fill();
   } else {
     // Moon
     ctx.fillStyle='#C8D8D8';
-    ctx.beginPath(); ctx.arc(565,38,15,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(GW-44,38,15,0,Math.PI*2); ctx.fill();
     ctx.fillStyle=s.sky;
-    ctx.beginPath(); ctx.arc(573,32,11,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(GW-36,32,11,0,Math.PI*2); ctx.fill();
     // Stars
     ctx.fillStyle='rgba(255,255,255,0.55)';
-    for(let i=0;i<52;i++) ctx.fillRect((i*139+47)%GW,(i*71+11)%112,((i%3)+1),((i%3)+1));
+    for(let i=0;i<52;i++) ctx.fillRect((i*139+47)%GW,(i*71+11)%Math.round(GY*0.75),((i%3)+1),((i%3)+1));
   }
 
-  // Far mountains (parallax ×0.25)
+  // Far mountains (parallax ×0.25) — height scales with GY
+  const mtnH=Math.round(GY*0.28), snowH=Math.round(GY*0.22);
   ctx.fillStyle=s.mtn;
   for(let i=0;i<7;i++){
     const mx=((i*220-dist*0.25)%(220*7)+220*7)%(220*7)-110;
     ctx.beginPath();
     ctx.moveTo(rr(mx),GY);
-    ctx.lineTo(rr(mx+110),GY-95);
+    ctx.lineTo(rr(mx+110),GY-mtnH);
     ctx.lineTo(rr(mx+220),GY);
     ctx.fill();
   }
@@ -163,9 +181,9 @@ function drawBG(dist,si){
     for(let i=0;i<7;i++){
       const mx=((i*220-dist*0.25)%(220*7)+220*7)%(220*7)-110;
       ctx.beginPath();
-      ctx.moveTo(rr(mx+110),GY-95);
-      ctx.lineTo(rr(mx+90),GY-75);
-      ctx.lineTo(rr(mx+130),GY-75);
+      ctx.moveTo(rr(mx+110),GY-mtnH);
+      ctx.lineTo(rr(mx+90),GY-snowH);
+      ctx.lineTo(rr(mx+130),GY-snowH);
       ctx.fill();
     }
   }
@@ -678,7 +696,7 @@ function drawItemIcon(x,y,lv,s){
 function drawChainSlots(){
   const W=32,H=26,GAP=3;
   const totalW=5*W+4*GAP;
-  const sx=rr((GW-totalW)/2), sy=26;
+  const sx=rr((GW-totalW)/2), sy=48;
   for(let i=0;i<5;i++){
     const bx=sx+i*(W+GAP);
     const has=items[i];
@@ -1220,7 +1238,12 @@ function spawnEntity(){
     else if(o<0.58) e={type:'obstacle',sub:'crow_front', x:GW+10, y:GY-42,vy:0,alive:true};
     else if(o<0.76) e={type:'obstacle',sub:'crow_back',  x:-30,   y:GY-52,vy:0,alive:true};
     else if(!bridgeActive&&dist>500&&o<0.92) e={type:'obstacle',sub:'oihagi',x:GW+10,y:GY-54,vy:0,alive:true,phase:'grin'};
-    else            e={type:'obstacle',sub:'crow_dive',  x:GW-40, y:12,   vy:0,alive:true};
+    else{
+      // crow_dive: プレイヤーへ直線急降下（vy=y変化/x変化の比率）
+      const spX=GW+10, spY=GY-160;
+      const ratioY=((GY-46)-spY)/(spX-PX);
+      e={type:'obstacle',sub:'crow_dive',x:spX,y:spY,vy:ratioY,alive:true};
+    }
   }
   if(e){e.id=Math.random(); entities.push(e);}
 }
@@ -1399,7 +1422,7 @@ function update(){
   entities=entities.filter(e=>{
     if(!e.alive) return false;
     if(e.sub==='crow_back')      e.x+=3.7;
-    else if(e.sub==='crow_dive'){e.x-=sp*0.66; e.vy+=0.24; e.y+=e.vy;}
+    else if(e.sub==='crow_dive'){const dx=sp*0.92; e.x-=dx; e.y+=dx*e.vy;}
     else if(e.sub==='oihagi')   {e.x-=sp*0.55; if(e.x-PX<130) e.phase='leap';}
     else                         e.x-=sp*0.66;
 
@@ -1547,10 +1570,10 @@ function drawNpcPopup(){
   const a=Math.min(1,t*4);
   const cx=GW/2, cy=GH/2-18;
   ctx.fillStyle=`rgba(8,4,0,${0.88*a})`;
-  ctx.fillRect(cx-160,cy-26,320,44);
+  ctx.fillRect(cx-148,cy-26,296,44);
   ctx.fillStyle=`rgba(200,160,0,${0.6*a})`;
-  ctx.fillRect(cx-160,cy-26,320,2);
-  ctx.fillRect(cx-160,cy+16,320,2);
+  ctx.fillRect(cx-148,cy-26,296,2);
+  ctx.fillRect(cx-148,cy+16,296,2);
   ctx.save();
   ctx.translate(cx,cy);
   ctx.textAlign='center';
@@ -1573,38 +1596,39 @@ function drawNpcPopup(){
 // DRAW: HUD
 // ══════════════════════════════════════════════════════════
 function drawHUD(){
-  // Lives
-  ctx.font='bold 20px monospace';
+  // Row 1: Hearts (left) + distance (right)
+  ctx.font='bold 18px monospace';
   for(let i=0;i<5;i++){
     ctx.fillStyle= i<lives ? '#F01870' : '#200810';
-    ctx.fillText('♥',5+i*23,22);
+    ctx.fillText('♥',4+i*20,20);
   }
-  // Stage / distance
-  ctx.fillStyle='#E8B800'; ctx.font='bold 13px monospace'; ctx.textAlign='center';
-  ctx.fillText(STAGES[stageIdx].name+'  ✦  '+Math.floor(dist)+'歩', GW/2, 18);
+  ctx.fillStyle='#E8B800'; ctx.font='bold 11px monospace'; ctx.textAlign='right';
+  ctx.fillText(Math.floor(dist)+'歩', GW-4, 20);
   ctx.textAlign='left';
-  // Chain item slots (5 slots centered, below stage label)
+  // Row 2: Stage name centered
+  ctx.fillStyle='rgba(220,176,0,0.90)'; ctx.font='bold 11px monospace'; ctx.textAlign='center';
+  ctx.fillText(STAGES[stageIdx].name, GW/2, 36);
+  ctx.textAlign='left';
+  // Row 3: Chain item slots (sy=48 inside drawChainSlots)
   drawChainSlots();
-  ctx.textAlign='left';
-  // Goal indicator
+  // Goal indicator at bottom
   ctx.fillStyle='rgba(220,180,0,0.40)'; ctx.fillRect(0,GH-4,rr(GW*Math.min(dist,GOAL_DIST)/GOAL_DIST),4);
   ctx.fillStyle='rgba(240,200,60,0.80)'; ctx.fillRect(rr(GW*Math.min(dist,GOAL_DIST)/GOAL_DIST)-1,GH-6,2,6);
-
   // Crow-back warning
   const hasCB=entities.some(e=>e.sub==='crow_back'&&e.x<PX-5&&e.x>-30);
   if(hasCB&&Math.floor(frame/7)%2===0){
     ctx.fillStyle='#FF6000'; ctx.font='bold 14px monospace';
-    ctx.fillText('⚠ 後ろ！',5,GH/2);
+    ctx.fillText('⚠ 後ろ！',4,GH/2);
   }
 }
 
 function drawMessage(){
   if(!msg) return;
   const a=Math.min(1,msgT/25);
-  ctx.fillStyle=`rgba(10,6,0,${0.74*a})`; ctx.fillRect(GW/2-132,52,264,36);
-  ctx.fillStyle='#2A1200'; ctx.fillRect(GW/2-131,53,262,1);
-  ctx.fillStyle=`rgba(232,184,0,${a})`; ctx.font='bold 15px monospace'; ctx.textAlign='center';
-  ctx.fillText(msg, GW/2, 76);
+  ctx.fillStyle=`rgba(10,6,0,${0.74*a})`; ctx.fillRect(GW/2-130,88,260,28);
+  ctx.fillStyle='#2A1200'; ctx.fillRect(GW/2-129,89,258,1);
+  ctx.fillStyle=`rgba(232,184,0,${a})`; ctx.font='bold 13px monospace'; ctx.textAlign='center';
+  ctx.fillText(msg, GW/2, 107);
   ctx.textAlign='left';
 }
 
@@ -1737,43 +1761,36 @@ function drawClearChar(rank,cx,cy){
 
 function drawClearScreen(){
   const R=RANKS[clearRank];
-  // 背景
   ctx.fillStyle='rgba(14,8,0,0.92)'; ctx.fillRect(0,0,GW,GH);
-  // 金縁
   ctx.strokeStyle=`rgba(220,180,0,0.65)`; ctx.lineWidth=3; ctx.strokeRect(10,10,GW-20,GH-20);
   ctx.strokeStyle=`rgba(220,180,0,0.25)`; ctx.lineWidth=1; ctx.strokeRect(14,14,GW-28,GH-28);
 
   ctx.textAlign='center';
-  // 称号（筆文字風）
   ctx.shadowColor=R.col; ctx.shadowBlur=18;
-  ctx.fillStyle=R.col; ctx.font='bold 38px monospace';
-  ctx.fillText(R.title,GW/2,62);
+  ctx.fillStyle=R.col; ctx.font='bold 32px monospace';
+  ctx.fillText(R.title,GW/2,rr(GH*0.16));
   ctx.shadowBlur=0;
-  ctx.fillStyle='rgba(220,200,160,0.70)'; ctx.font='13px monospace';
-  ctx.fillText(R.sub,GW/2,84);
+  ctx.fillStyle='rgba(220,200,160,0.70)'; ctx.font='12px monospace';
+  ctx.fillText(R.sub,GW/2,rr(GH*0.22));
 
-  // 収集状況
-  ctx.fillStyle='rgba(240,180,0,0.40)'; ctx.fillRect(GW/2-120,94,240,2);
-  ctx.fillStyle='#E0C880'; ctx.font='12px monospace';
+  ctx.fillStyle='rgba(240,180,0,0.40)'; ctx.fillRect(GW/2-110,rr(GH*0.26),220,2);
+  ctx.fillStyle='#E0C880'; ctx.font='11px monospace';
   const haveNames=CHAIN.filter((_,i)=>items[i]).map(c=>c.name).join('・');
-  ctx.fillText('所持アイテム：'+haveNames,GW/2,112);
-  ctx.fillStyle='#F0D060'; ctx.font='bold 13px monospace';
-  ctx.fillText('旅の歩み：'+Math.floor(dist)+' 歩',GW/2,132);
+  ctx.fillText('所持：'+haveNames,GW/2,rr(GH*0.31));
+  ctx.fillStyle='#F0D060'; ctx.font='bold 12px monospace';
+  ctx.fillText('旅の歩み：'+Math.floor(dist)+' 歩',GW/2,rr(GH*0.37));
 
-  // ランクグレード
   const grades=['SS','A','B','C','D'];
   ctx.shadowColor=R.col; ctx.shadowBlur=12;
-  ctx.fillStyle=R.col; ctx.font='bold 28px monospace';
-  ctx.fillText('Rank '+grades[clearRank],GW/2,158);
+  ctx.fillStyle=R.col; ctx.font='bold 26px monospace';
+  ctx.fillText('Rank '+grades[clearRank],GW/2,rr(GH*0.47));
   ctx.shadowBlur=0;
 
-  // キャラクター
-  ctx.fillStyle='rgba(240,180,0,0.40)'; ctx.fillRect(GW/2-120,162,240,2);
-  drawClearChar(clearRank, GW/2, GH-55);
+  ctx.fillStyle='rgba(240,180,0,0.40)'; ctx.fillRect(GW/2-110,rr(GH*0.52),220,2);
+  drawClearChar(clearRank, GW/2, rr(GH*0.80));
 
-  // タップ促進
   if(Math.floor(Date.now()/600)%2===0){
-    ctx.fillStyle='#E8B800'; ctx.font='bold 13px monospace';
+    ctx.fillStyle='#E8B800'; ctx.font='bold 12px monospace';
     ctx.fillText('タップ / SPACE でタイトルへ',GW/2,GH-16);
   }
   ctx.textAlign='left';
@@ -1781,60 +1798,56 @@ function drawClearScreen(){
 
 function drawStartScreen(){
   ctx.fillStyle='rgba(0,0,0,0.78)'; ctx.fillRect(0,0,GW,GH);
-  // Decorative border
   ctx.strokeStyle='rgba(200,160,0,0.40)'; ctx.lineWidth=2;
-  ctx.strokeRect(16,16,GW-32,GH-32);
+  ctx.strokeRect(10,10,GW-20,GH-20);
   ctx.strokeStyle='rgba(200,160,0,0.20)'; ctx.lineWidth=1;
-  ctx.strokeRect(20,20,GW-40,GH-40);
+  ctx.strokeRect(14,14,GW-28,GH-28);
 
   ctx.textAlign='center';
-  ctx.fillStyle='#E8B000'; ctx.font='bold 36px monospace';
-  ctx.fillText('わらしべ長者',GW/2,95);
-  ctx.fillStyle='#C89800'; ctx.font='bold 15px monospace';
-  ctx.fillText('R U N N E R',GW/2,120);
+  ctx.fillStyle='#E8B000'; ctx.font='bold 30px monospace';
+  ctx.fillText('わらしべ長者',GW/2,rr(GH*0.23));
+  ctx.fillStyle='#C89800'; ctx.font='bold 14px monospace';
+  ctx.fillText('R U N N E R',GW/2,rr(GH*0.30));
 
-  // Divider
-  ctx.fillStyle='rgba(200,160,0,0.35)'; ctx.fillRect(GW/2-100,130,200,2);
+  ctx.fillStyle='rgba(200,160,0,0.35)'; ctx.fillRect(GW/2-90,rr(GH*0.34),180,2);
 
-  ctx.fillStyle='rgba(240,220,180,0.85)'; ctx.font='13px monospace';
-  ctx.fillText('わらから始め　旅をして',GW/2,158);
-  ctx.fillText('交換を重ね　長者を目指せ！',GW/2,178);
+  ctx.fillStyle='rgba(240,220,180,0.85)'; ctx.font='12px monospace';
+  ctx.fillText('わらから始め　旅をして',GW/2,rr(GH*0.41));
+  ctx.fillText('交換を重ね　長者を目指せ！',GW/2,rr(GH*0.47));
 
-  ctx.fillStyle='rgba(200,180,140,0.60)'; ctx.font='11px monospace';
-  ctx.fillText('🪨 岩  ・  凧  ・  カラス×3種 を避けよう',GW/2,210);
+  ctx.fillStyle='rgba(200,180,140,0.60)'; ctx.font='10px monospace';
+  ctx.fillText('🪨 岩  ・  凧  ・  カラス×3種 を避けよう',GW/2,rr(GH*0.55));
 
-  // Blink
   if(Math.floor(Date.now()/600)%2===0){
     ctx.fillStyle='#E8B800'; ctx.font='bold 14px monospace';
-    ctx.fillText('タップ / SPACE でスタート',GW/2,252);
+    ctx.fillText('タップ / SPACE でスタート',GW/2,rr(GH*0.72));
   }
 
-  // Corner kanji decoration
-  ctx.fillStyle='rgba(200,160,0,0.22)'; ctx.font='bold 42px monospace';
-  ctx.fillText('旅',40,GH-22);
-  ctx.fillText('路',GW-40,GH-22);
+  ctx.fillStyle='rgba(200,160,0,0.22)'; ctx.font='bold 36px monospace';
+  ctx.fillText('旅',32,GH-16);
+  ctx.fillText('路',GW-32,GH-16);
   ctx.textAlign='left';
 }
 
 function drawGameOverScreen(){
   ctx.fillStyle='rgba(0,0,0,0.82)'; ctx.fillRect(0,0,GW,GH);
-  ctx.strokeStyle='rgba(200,0,0,0.30)'; ctx.lineWidth=2; ctx.strokeRect(16,16,GW-32,GH-32);
+  ctx.strokeStyle='rgba(200,0,0,0.30)'; ctx.lineWidth=2; ctx.strokeRect(10,10,GW-20,GH-20);
 
   ctx.textAlign='center';
-  ctx.fillStyle='#CC2010'; ctx.font='bold 44px monospace';
-  ctx.fillText('GAME OVER',GW/2,116);
+  ctx.fillStyle='#CC2010'; ctx.font='bold 38px monospace';
+  ctx.fillText('GAME OVER',GW/2,rr(GH*0.30));
 
-  ctx.fillStyle='rgba(200,160,0,0.35)'; ctx.fillRect(GW/2-110,126,220,2);
+  ctx.fillStyle='rgba(200,160,0,0.35)'; ctx.fillRect(GW/2-100,rr(GH*0.38),200,2);
 
-  ctx.fillStyle='#E8D8A0'; ctx.font='16px monospace';
-  ctx.fillText('旅の歩み：'+Math.floor(dist)+' 歩',GW/2,160);
-  ctx.fillStyle='#E8B000'; ctx.font='14px monospace';
+  ctx.fillStyle='#E8D8A0'; ctx.font='14px monospace';
+  ctx.fillText('旅の歩み：'+Math.floor(dist)+' 歩',GW/2,rr(GH*0.45));
+  ctx.fillStyle='#E8B000'; ctx.font='12px monospace';
   const goNames=CHAIN.filter((_,i)=>items[i]).map(c=>c.name).join('・');
-  ctx.fillText('持ち物：'+goNames,GW/2,186);
+  ctx.fillText('持ち物：'+goNames,GW/2,rr(GH*0.52));
 
   if(Math.floor(Date.now()/600)%2===0){
     ctx.fillStyle='#E8B800'; ctx.font='bold 13px monospace';
-    ctx.fillText('タップ / SPACE でリトライ',GW/2,265);
+    ctx.fillText('タップ / SPACE でリトライ',GW/2,rr(GH*0.75));
   }
   ctx.textAlign='left';
 }
