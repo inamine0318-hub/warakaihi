@@ -66,6 +66,16 @@ const PSCALE=1.5;   // player visual scale
 const ESCALE=1.35;  // enemy visual scale
 const BRIDGE_EVERY=550,BRIDGE_LEN=280;
 const BPLANK_W=40,BPLANK_PITCH=50,BSCROLL=6.0;
+const EXCHANGE=[3,3,4,3,3,3,2,2,0]; // わら×3→きっぷ…
+const ITEM_VAL=[1,3,9,36,108,324,972,1944,3888];
+const GOAL_DIST=2000;
+const RANKS=[
+  {score:3000,title:'わらしべ長者',  sub:'天下無双の豪商！',    col:'#F0C000'},
+  {score:900, title:'筆頭家臣',      sub:'立派な武家の臣！',    col:'#C0D0FF'},
+  {score:180, title:'お抱え商人',    sub:'繁盛する商人！',      col:'#D0A040'},
+  {score:27,  title:'屋敷のアルバイト',sub:'まずは働くことから！',col:'#90B080'},
+  {score:0,   title:'通りすがりの村人',sub:'旅はまだ始まり…',   col:'#A09080'},
+];
 
 const STAGES=[
   {name:'昼の村道',  minD:   0,w:'sunny',sky:'#5BA8D8',hor:'#A8D878',gnd:'#7A5C1E',gndD:'#5A3E0E',mtn:'#2878B8',tree:'#1E6818'},
@@ -1091,6 +1101,7 @@ let state='start';
 let dist,speed,py,vy,grounded,lives,itemLv,invuln,invT,frame,entities,spawnD,stageIdx,msg,msgT;
 let itemPopT,itemPopFrom,itemPopTo;
 let bridgeActive,bridgeStartDist,bridgeHoles,bridgeDebris,bridgeWarnDone;
+let itemStack,clearRank,clearScore;
 
 function initGame(){
   dist=0; speed=5; py=GY-46; vy=0; grounded=true;
@@ -1099,6 +1110,7 @@ function initGame(){
   itemPopT=0; itemPopFrom=0; itemPopTo=0;
   bridgeActive=false; bridgeStartDist=BRIDGE_EVERY;
   bridgeHoles=[]; bridgeDebris=[]; bridgeWarnDone=false;
+  itemStack=1; clearRank=4; clearScore=0;
   state='playing';
 }
 
@@ -1167,10 +1179,11 @@ function updateBridge(){
       const wi=raw%BPLANK_PITCH;
       if(pi<bridgeHoles.length&&bridgeHoles[pi]&&wi<BPLANK_W){
         invuln=true; invT=120; lives=Math.max(0,lives-1);
-        if(itemLv>0) itemLv--;
+        if(itemStack>1) itemStack--;
+        else if(itemLv>0){itemLv--; itemStack=1;}
         spawnBridgeDebris(PX+13);
         SFX.hit();
-        msg='板が抜けた！ライフとアイテムが！'; msgT=240;
+        msg='板が抜けた！ライフと'+ITEMS[itemLv].name+'が！'; msgT=240;
         [220,180,140].forEach((f,k)=>setTimeout(()=>beep(f,0.22,'sawtooth',0.13),k*90));
         if(lives<=0){bridgeActive=false;state='gameover';SFX.over();}
       }
@@ -1269,6 +1282,16 @@ function update(){
   if(msgT>0&&--msgT===0) msg='';
   if(itemPopT>0) --itemPopT;
 
+  // Goal check
+  if(dist>=GOAL_DIST){
+    clearScore=ITEM_VAL[itemLv]*itemStack;
+    clearRank=RANKS.length-1;
+    for(let i=0;i<RANKS.length;i++){if(clearScore>=RANKS[i].score){clearRank=i;break;}}
+    state='clear';
+    [523,659,784,1047,1319].forEach((f,i)=>setTimeout(()=>beep(f,0.35,'triangle',0.14),i*160));
+    return;
+  }
+
   spawnEntity();
   updateBridge();
   const sp=speed;
@@ -1292,22 +1315,43 @@ function update(){
         if(aabb(px_,py_,pw,ph,ex,ey,ew,eh)){
           e.alive=false; invuln=true; SFX.hit();
           if(e.sub==='oihagi'){
-            // 追い剥ぎ：アイテム全没収、わらに戻る
-            itemLv=0; invT=180;
-            msg='追い剥ぎに持ち物を奪われた！'; msgT=260;
+            // 追い剥ぎ：全没収→わら×1
+            itemLv=0; itemStack=1; invT=180;
+            msg='追い剥ぎに持ち物を全部奪われた！'; msgT=280;
             [440,330,220].forEach((f,i)=>setTimeout(()=>beep(f,0.18,'sawtooth',0.14),i*90));
           } else {
-            lives=Math.max(0,lives-1); invT=120;
-            if(lives<=0){state='gameover'; SFX.over();}
+            // 障害物：アイテム1個落とす
+            if(itemStack>1){
+              itemStack--; invT=110;
+              msg=ITEMS[itemLv].name+'を1つ落とした！'; msgT=180;
+            } else if(itemLv>0){
+              itemLv--; itemStack=Math.max(1,EXCHANGE[itemLv]-1); invT=110;
+              msg=ITEMS[itemLv].name+'に逆戻り…'; msgT=200;
+            } else {
+              lives=Math.max(0,lives-1); invT=120;
+              msg='わらも無くした！'; msgT=180;
+              if(lives<=0){state='gameover'; SFX.over();}
+            }
           }
         }
       } else if(e.type==='item'){
         if(aabb(px_,py_,pw,ph, e.x+m,e.y+m,18,13)){
           e.alive=false;
           itemPopFrom=itemLv;
-          const nl=Math.min(8,itemLv+1); itemLv=nl;
-          itemPopTo=nl; itemPopT=110;
-          msg=ITEMS[nl].desc; msgT=200; SFX.get();
+          const prevStack=itemStack;
+          itemStack++;
+          const need=EXCHANGE[itemLv];
+          if(itemLv<8 && itemStack>=need){
+            itemLv=Math.min(8,itemLv+1); itemStack=1;
+            itemPopTo=itemLv; itemPopT=110;
+            msg=ITEMS[itemLv].desc; msgT=220;
+          } else {
+            itemPopTo=itemLv; itemPopT=60;
+            if(itemLv<8) msg=ITEMS[itemLv].name+' ×'+itemStack+'！あと'+(need-itemStack)+'個で交換';
+            else         msg='こがねを'+itemStack+'個持っている！';
+            msgT=160;
+          }
+          SFX.get();
         }
       } else if(e.type==='heart'){
         if(aabb(px_,py_,pw,ph, e.x+m,e.y+m,14,15)){
@@ -1325,24 +1369,27 @@ function update(){
 // ══════════════════════════════════════════════════════════
 function drawItemBadge(py,lv){
   const col=ITEMS[lv].col;
-  const label=ITEMS[lv].name;
-  // スケール後のキャラ頭上座標
   const topY=rr(GY+(py-GY-20)*PSCALE)-18;
   const cx=rr(PX+13);
-  const W=36, H=16;
-  // 吹き出し背景
-  ctx.fillStyle='rgba(8,4,0,0.86)';
+  const W=48, H=18;
+  ctx.fillStyle='rgba(8,4,0,0.88)';
   ctx.fillRect(cx-W/2,topY-H,W,H);
-  // 上部カラーバー
   ctx.fillStyle=col;
   ctx.fillRect(cx-W/2,topY-H,W,2);
-  // アイテム名
   ctx.fillStyle='#F0E080';
   ctx.font='bold 10px monospace';
   ctx.textAlign='center';
-  ctx.fillText(label,cx,topY-H+12);
-  // 吹き出しの三角
-  ctx.fillStyle='rgba(8,4,0,0.86)';
+  ctx.fillText(ITEMS[lv].name+' ×'+itemStack,cx,topY-H+12);
+  // Exchange progress bar
+  if(lv<8){
+    const need=EXCHANGE[lv];
+    const pw=rr((W-4)*itemStack/need);
+    ctx.fillStyle='rgba(255,255,255,0.12)';
+    ctx.fillRect(cx-W/2+2,topY-4,W-4,3);
+    ctx.fillStyle=col;
+    ctx.fillRect(cx-W/2+2,topY-4,pw,3);
+  }
+  ctx.fillStyle='rgba(8,4,0,0.88)';
   ctx.beginPath();
   ctx.moveTo(cx-4,topY); ctx.lineTo(cx+4,topY); ctx.lineTo(cx,topY+5);
   ctx.fill();
@@ -1354,38 +1401,45 @@ function drawItemBadge(py,lv){
 // ══════════════════════════════════════════════════════════
 function drawItemPopup(){
   if(itemPopT<=0) return;
-  const t=itemPopT/110;          // 1.0 → 0.0
+  const isUpgrade=(itemPopFrom!==itemPopTo);
+  const dur=isUpgrade?110:60;
+  const t=itemPopT/dur;
   const a=Math.min(1,t*4);
-  const sc=1+(1-t)*0.25;
+  const sc=1+(1-t)*(isUpgrade?0.28:0.12);
   const cx=GW/2, cy=GH/2-18;
 
-  // パネル背景
   ctx.fillStyle=`rgba(8,4,0,${0.88*a})`;
   ctx.fillRect(cx-140,cy-26,280,44);
-  ctx.fillStyle=`rgba(240,180,0,${0.6*a})`;
+  ctx.fillStyle=`rgba(240,180,0,${(isUpgrade?0.6:0.3)*a})`;
   ctx.fillRect(cx-140,cy-26,280,2);
   ctx.fillRect(cx-140,cy+16,280,2);
 
-  // テキスト（ズームアニメ）
   ctx.save();
-  ctx.translate(cx,cy);
-  ctx.scale(sc,sc);
-  ctx.fillStyle=`rgba(255,220,60,${a})`;
-  ctx.font='bold 20px monospace';
+  ctx.translate(cx,cy); ctx.scale(sc,sc);
   ctx.textAlign='center';
-  ctx.fillText(ITEMS[itemPopFrom].name+' → '+ITEMS[itemPopTo].name+'！',0,0);
+  if(isUpgrade){
+    // 物々交換演出
+    ctx.fillStyle=`rgba(255,220,60,${a})`;
+    ctx.font='bold 20px monospace';
+    ctx.fillText(ITEMS[itemPopFrom].name+' → '+ITEMS[itemPopTo].name+'！',0,0);
+    ctx.fillStyle=`rgba(200,160,40,${a*0.7})`;
+    ctx.font='11px monospace';
+    ctx.fillText('物々交換成立！',0,16);
+  } else {
+    // スタック追加
+    ctx.fillStyle=`rgba(180,240,120,${a})`;
+    ctx.font='bold 16px monospace';
+    ctx.fillText('+1  '+ITEMS[itemPopTo].name+' ×'+itemStack,0,0);
+  }
   ctx.restore();
   ctx.textAlign='left';
 
-  // キラキラパーティクル
-  if(t>0.35){
+  if(isUpgrade&&t>0.35){
     const seed=Math.floor(itemPopT/2);
     const pcols=['#FFE040','#FF9020','#80FF60','#40E8FF','#FF60C0'];
     for(let i=0;i<12;i++){
-      const px2=cx-120+((seed*41+i*67)%240);
-      const py2=cy-22+((seed*59+i*37)%36);
       ctx.fillStyle=pcols[i%5];
-      ctx.fillRect(px2,py2,2,2);
+      ctx.fillRect(cx-120+((seed*41+i*67)%240),cy-22+((seed*59+i*37)%36),2,2);
     }
   }
 }
@@ -1404,10 +1458,25 @@ function drawHUD(){
   ctx.fillStyle='#E8B800'; ctx.font='bold 13px monospace'; ctx.textAlign='center';
   ctx.fillText(STAGES[stageIdx].name+'  ✦  '+Math.floor(dist)+'歩', GW/2, 18);
   ctx.textAlign='left';
-  // Item chain
-  ctx.fillStyle='#D09840'; ctx.font='11px monospace'; ctx.textAlign='right';
-  ctx.fillText(ITEMS[itemLv].name+'→'+ITEMS[Math.min(itemLv+1,8)].name, GW-8, 18);
+  // Item stack display (top-right)
+  const itcol=ITEMS[itemLv].col;
+  ctx.fillStyle='rgba(8,4,0,0.72)'; ctx.fillRect(GW-106,4,102,22);
+  ctx.fillStyle=itcol; ctx.fillRect(GW-106,4,102,2);
+  ctx.fillStyle=itcol; ctx.font='bold 12px monospace'; ctx.textAlign='right';
+  ctx.fillText(ITEMS[itemLv].name+' ×'+itemStack, GW-6, 20);
+  // Exchange progress (→ next item)
+  if(itemLv<8){
+    const need=EXCHANGE[itemLv];
+    ctx.fillStyle='rgba(255,255,255,0.10)'; ctx.fillRect(GW-106,26,102,4);
+    ctx.fillStyle=itcol;
+    ctx.fillRect(GW-106,26,rr(102*Math.min(itemStack,need)/need),4);
+    ctx.fillStyle='rgba(220,200,140,0.55)'; ctx.font='9px monospace';
+    ctx.fillText('→'+ITEMS[itemLv+1].name+' あと'+(need-Math.min(itemStack,need))+'個',GW-6,38);
+  }
   ctx.textAlign='left';
+  // Goal indicator
+  ctx.fillStyle='rgba(220,180,0,0.40)'; ctx.fillRect(0,GH-4,rr(GW*Math.min(dist,GOAL_DIST)/GOAL_DIST),4);
+  ctx.fillStyle='rgba(240,200,60,0.80)'; ctx.fillRect(rr(GW*Math.min(dist,GOAL_DIST)/GOAL_DIST)-1,GH-6,2,6);
 
   // Crow-back warning
   const hasCB=entities.some(e=>e.sub==='crow_back'&&e.x<PX-5&&e.x>-30);
@@ -1430,6 +1499,173 @@ function drawMessage(){
 // ══════════════════════════════════════════════════════════
 // SCREENS
 // ══════════════════════════════════════════════════════════
+function drawClearChar(rank,cx,cy){
+  // Simplified 2x-scale characters for each rank
+  ctx.save(); ctx.translate(cx,cy); ctx.scale(2,2);
+  const OL='#120800';
+  function R(col,x,y,w,h){ctx.fillStyle=OL;ctx.fillRect(x-1,y-1,w+2,h+2);ctx.fillStyle=col;ctx.fillRect(x,y,w,h);}
+
+  if(rank===0){
+    // ──── わらしべ長者: 黒の束帯、烏帽子、金扇子 ────
+    // 高い烏帽子
+    R('#0A0A10',-2,-38,14,4); R('#0A0A10',-1,-36,12,4); R('#0A0A10',0,-32,10,10); R('#0A0A10',1,-34,8,38);
+    // 頭
+    R('#DCA870',0,-22,16,14); R('#F0C000',2,-24,12,4);
+    // 目・口
+    ctx.fillStyle='#000'; ctx.fillRect(3,-20,3,3); ctx.fillRect(10,-20,3,3);
+    ctx.fillStyle='#C87040'; ctx.fillRect(4,-13,8,2); ctx.fillRect(6,-11,4,2);
+    // 束帯（黒豪華）
+    R('#0A0A18',0,-8,16,28); R('#F0C000',0,-8,16,2); R('#F0C000',0,16,16,2);
+    R('#F0C000',6,-4,4,20); // 縦金ライン
+    ctx.fillStyle='#2040C0'; ctx.fillRect(2,-2,3,6); ctx.fillRect(11,-2,3,6); // 紋章
+    // 袖 (左右豪華)
+    R('#0A0A18',-14,-2,14,14); R('#F0C000',-14,-2,14,2);
+    R('#0A0A18',16,-2,14,14); R('#F0C000',16,-2,14,2);
+    // 金扇子（右手）
+    ctx.fillStyle='#F0C000';
+    for(let i=0;i<5;i++) ctx.fillRect(24+i,-12+i*2,2,10-i*1.5|0);
+    R('#C89000',24,-12,1,10);
+    // 足
+    R('#0A0A18',2,20,12,8); R('#DCA870',0,26,6,4); R('#DCA870',10,26,6,4);
+  } else if(rank===1){
+    // ──── 筆頭家臣: 鎧、刀を掲げる ────
+    R('#DCA870',2,-22,14,14);
+    ctx.fillStyle='#000'; ctx.fillRect(4,-19,3,3); ctx.fillRect(10,-19,3,3);
+    ctx.fillStyle='#C87040'; ctx.fillRect(5,-12,8,2);
+    // 頭巾/兜
+    R('#303848',-2,-28,18,10); R('#6080A0',-2,-28,18,3);
+    ctx.fillStyle='#A0B8D0'; ctx.fillRect(0,-28,14,2);
+    // 鎧胴
+    R('#303848',-2,-8,20,28); R('#6080A0',-2,-8,20,3); R('#6080A0',-2,18,20,2);
+    for(let i=0;i<3;i++){R('#5878A0',i*6-1,-4,5,14);}
+    // 大袖
+    R('#303848',-14,-4,12,18); R('#6080A0',-14,-4,12,3);
+    R('#303848',18,-4,12,18); R('#6080A0',18,-4,12,3);
+    // 刀（掲げ）
+    R('#A86828',-18,-38,4,30); // 柄
+    ctx.fillStyle=OL; ctx.fillRect(-20,-70,5,35);
+    ctx.fillStyle='#C8D0D8'; ctx.fillRect(-19,-69,3,34);
+    ctx.fillStyle='#E0E8F0'; ctx.fillRect(-18,-69,1,30);
+    // 足
+    R('#303848',2,20,7,8); R('#303848',10,20,7,8);
+    R('#DCA870',1,28,6,4); R('#DCA870',9,28,6,4);
+  } else if(rank===2){
+    // ──── お抱え商人: 大きな風呂敷、笑顔 ────
+    R('#DCA870',2,-18,14,14);
+    ctx.fillStyle='#000'; ctx.fillRect(4,-15,3,3); ctx.fillRect(10,-15,3,3);
+    ctx.fillStyle='#C04060'; ctx.fillRect(4,-8,10,3); ctx.fillRect(6,-5,6,2); // 笑顔
+    // 頭巾
+    R('#1A3060',0,-24,14,8);
+    ctx.fillStyle='#4870C0'; ctx.fillRect(0,-24,14,3);
+    // 着物（商人らしい茶）
+    R('#6A3808',0,-4,16,24); R('#4A2008',0,-4,3,24);
+    R('#9A6030',0,-4,16,2);
+    // 帯
+    R('#2A1408',0,14,16,5);
+    // 大きな風呂敷 (背中)
+    R('#2058A0',-10,-14,10,28); R('#1A4880',-10,-14,10,4);
+    ctx.fillStyle='#4080C0';
+    ctx.beginPath(); ctx.arc(-14,-12,8,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#1A3870';
+    ctx.beginPath(); ctx.arc(-14,-12,5,0,Math.PI*2); ctx.fill();
+    R('#2058A0',-22,-20,10,18);
+    // 手
+    R('#DCA870',-10,16,6,6); R('#DCA870',16,10,6,6);
+    // 足
+    R('#4A2808',2,20,6,8); R('#4A2808',10,20,6,8);
+  } else if(rank===3){
+    // ──── 屋敷のアルバイト: ほうき掃除、前傾 ────
+    // 体を前傾にするためにctxを傾ける
+    ctx.save(); ctx.translate(8,0); ctx.rotate(0.3);
+    R('#DCA870',-4,-18,14,14);
+    ctx.fillStyle='#000'; ctx.fillRect(-2,-15,3,3); ctx.fillRect(4,-15,3,3);
+    ctx.fillStyle='#C87040'; ctx.fillRect(-1,-8,8,2); // へとへと口
+    ctx.fillStyle='rgba(255,100,100,0.4)'; ctx.fillRect(-1,-10,3,4); // 疲れ顔
+    // 頭巾
+    R('#A8A090',-6,-24,16,8); R('#C8C0A8',-6,-24,16,3);
+    // 着物（地味）
+    R('#5A4828',-4,-4,16,22);
+    R('#2A1A08',-4,-4,3,22);
+    // ほうき
+    ctx.fillStyle='#7A5020'; ctx.fillRect(14,-30,3,50);
+    ctx.fillStyle='#C8A040';
+    for(let i=0;i<6;i++) ctx.fillRect(11+i*2,18,2,10);
+    ctx.fillStyle='#E8C060';
+    for(let i=0;i<5;i++) ctx.fillRect(12+i*2,26,1,4);
+    // 手
+    R('#DCA870',12,-10,6,5); R('#DCA870',-8,14,5,5);
+    ctx.restore();
+    // 足
+    R('#5A4828',4,22,6,8); R('#5A4828',12,22,6,8);
+  } else {
+    // ──── 通りすがりの村人: わら1本、うなだれる ────
+    ctx.save(); ctx.translate(0,4); ctx.rotate(-0.1);
+    R('#DCA870',2,-18,14,14);
+    ctx.fillStyle='#000'; ctx.fillRect(4,-15,3,3); ctx.fillRect(10,-15,3,3);
+    // 悲しい口
+    ctx.fillStyle='#804030'; ctx.fillRect(5,-8,8,2);
+    ctx.fillStyle='#704020'; ctx.fillRect(5,-9,2,2); ctx.fillRect(11,-9,2,2);
+    // 乱れちょんまげ
+    R('#1A0E08',-1,-30,10,14); R('#2C1C12',1,-28,6,10);
+    // ぼろ着物
+    R('#5A3818',0,-4,16,22); R('#382208',0,-4,3,22);
+    R('#9A7040',2,-2,7,6); R('#584038',11,-2,4,6); // つぎはぎ
+    // わら1本
+    ctx.strokeStyle='#C8A020'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(20,-4); ctx.lineTo(14,20); ctx.stroke();
+    ctx.fillStyle='#C8A020'; ctx.fillRect(12,20,4,1);
+    // 手
+    R('#DCA870',-4,10,6,5); R('#DCA870',17,-4,5,5);
+    ctx.restore();
+    // 足
+    R('#5A3818',2,22,6,8); R('#5A3818',10,22,6,8);
+  }
+  ctx.restore();
+}
+
+function drawClearScreen(){
+  const R=RANKS[clearRank];
+  // 背景
+  ctx.fillStyle='rgba(14,8,0,0.92)'; ctx.fillRect(0,0,GW,GH);
+  // 金縁
+  ctx.strokeStyle=`rgba(220,180,0,0.65)`; ctx.lineWidth=3; ctx.strokeRect(10,10,GW-20,GH-20);
+  ctx.strokeStyle=`rgba(220,180,0,0.25)`; ctx.lineWidth=1; ctx.strokeRect(14,14,GW-28,GH-28);
+
+  ctx.textAlign='center';
+  // 称号（筆文字風）
+  ctx.shadowColor=R.col; ctx.shadowBlur=18;
+  ctx.fillStyle=R.col; ctx.font='bold 38px monospace';
+  ctx.fillText(R.title,GW/2,62);
+  ctx.shadowBlur=0;
+  ctx.fillStyle='rgba(220,200,160,0.70)'; ctx.font='13px monospace';
+  ctx.fillText(R.sub,GW/2,84);
+
+  // スコア
+  ctx.fillStyle='rgba(240,180,0,0.40)'; ctx.fillRect(GW/2-120,94,240,2);
+  ctx.fillStyle='#E0C880'; ctx.font='12px monospace';
+  ctx.fillText('最終アイテム：'+ITEMS[itemLv].name+' ×'+itemStack,GW/2,112);
+  ctx.fillStyle='#F0D060'; ctx.font='bold 13px monospace';
+  ctx.fillText('評価スコア：'+clearScore+' 両',GW/2,132);
+
+  // ランクグレード
+  const grades=['S','A','B','C','D'];
+  ctx.shadowColor=R.col; ctx.shadowBlur=12;
+  ctx.fillStyle=R.col; ctx.font='bold 28px monospace';
+  ctx.fillText('Rank '+grades[clearRank],GW/2,158);
+  ctx.shadowBlur=0;
+
+  // キャラクター
+  ctx.fillStyle='rgba(240,180,0,0.40)'; ctx.fillRect(GW/2-120,162,240,2);
+  drawClearChar(clearRank, GW/2, GH-55);
+
+  // タップ促進
+  if(Math.floor(Date.now()/600)%2===0){
+    ctx.fillStyle='#E8B800'; ctx.font='bold 13px monospace';
+    ctx.fillText('タップ / SPACE でタイトルへ',GW/2,GH-16);
+  }
+  ctx.textAlign='left';
+}
+
 function drawStartScreen(){
   ctx.fillStyle='rgba(0,0,0,0.78)'; ctx.fillRect(0,0,GW,GH);
   // Decorative border
@@ -1480,7 +1716,7 @@ function drawGameOverScreen(){
   ctx.fillStyle='#E8D8A0'; ctx.font='16px monospace';
   ctx.fillText('旅の歩み：'+Math.floor(dist)+' 歩',GW/2,160);
   ctx.fillStyle='#E8B000'; ctx.font='14px monospace';
-  ctx.fillText('最後の持ち物：'+ITEMS[itemLv].name,GW/2,186);
+  ctx.fillText('最後の持ち物：'+ITEMS[itemLv].name+' ×'+itemStack,GW/2,186);
 
   if(itemLv===8){
     ctx.fillStyle='#F0C000'; ctx.font='bold 17px monospace';
@@ -1501,7 +1737,7 @@ stageIdx=0; frame=0;
 
 function loop(){
   ctx.clearRect(0,0,GW,GH);
-  const bgD=(state==='playing'||state==='gameover')?dist:frame*0.4;
+  const bgD=(state==='playing'||state==='gameover'||state==='clear')?dist:frame*0.4;
   drawBG(bgD, stageIdx||0);
   drawWeather(STAGES[stageIdx||0].w, frame);
 
@@ -1537,6 +1773,9 @@ function loop(){
     drawPlayer(py,frame,false,itemLv);
     drawGameOverScreen();
     frame++;
+  } else if(state==='clear'){
+    drawClearScreen();
+    frame++;
   } else {
     drawStartScreen();
     frame++;
@@ -1549,6 +1788,7 @@ function loop(){
 // ══════════════════════════════════════════════════════════
 function doAction(){
   tryFullscreen();
+  if(state==='clear'){state='start'; return;}
   if(state!=='playing'){initGame(); return;}
   if(grounded){vy=JF; grounded=false; SFX.jump();}
 }
