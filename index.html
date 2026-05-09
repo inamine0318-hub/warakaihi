@@ -66,15 +66,22 @@ const PSCALE=1.5;   // player visual scale
 const ESCALE=1.35;  // enemy visual scale
 const BRIDGE_EVERY=550,BRIDGE_LEN=280;
 const BPLANK_W=40,BPLANK_PITCH=50,BSCROLL=6.0;
-const EXCHANGE=[3,3,4,3,3,3,2,2,0]; // わら×3→きっぷ…
-const ITEM_VAL=[1,3,9,36,108,324,972,1944,3888];
 const GOAL_DIST=2000;
+// わらしべ連鎖アイテム（5種）
+const CHAIN=[
+  {name:'わら',   col:'#C8A848'},
+  {name:'アブ',   col:'#2A8808'},
+  {name:'みかん', col:'#E87818'},
+  {name:'ぬの',   col:'#3860C8'},
+  {name:'うま',   col:'#B87828'},
+];
+// ランク（ゴール時判定）
 const RANKS=[
-  {score:3000,title:'わらしべ長者',  sub:'天下無双の豪商！',    col:'#F0C000'},
-  {score:900, title:'筆頭家臣',      sub:'立派な武家の臣！',    col:'#C0D0FF'},
-  {score:180, title:'お抱え商人',    sub:'繁盛する商人！',      col:'#D0A040'},
-  {score:27,  title:'屋敷のアルバイト',sub:'まずは働くことから！',col:'#90B080'},
-  {score:0,   title:'通りすがりの村人',sub:'旅はまだ始まり…',   col:'#A09080'},
+  {title:'わらしべ長者',   sub:'全5種揃えた！伝説の旅人！',   col:'#F0C000'},
+  {title:'筆頭家臣',       sub:'うまを手に入れた！',          col:'#C0D0FF'},
+  {title:'お抱え商人',     sub:'ぬのを手に入れた！',          col:'#D0A040'},
+  {title:'屋敷のアルバイト',sub:'みかん止まり…まだ旅の途中', col:'#90B080'},
+  {title:'門前払い',       sub:'わら一本で旅が終わった…',    col:'#A09080'},
 ];
 
 const STAGES=[
@@ -83,17 +90,6 @@ const STAGES=[
   {name:'雨の夜道',  minD:1500,w:'rainy',sky:'#0E1020',hor:'#080A14',gnd:'#1E1408',gndD:'#100A02',mtn:'#080E1C',tree:'#0E1E12'},
 ];
 
-const ITEMS=[
-  {name:'わら',  col:'#C8A848',desc:'わらを持って旅立った！'},
-  {name:'きっぷ',col:'#E8C820',desc:'きっぷと交換！旅が広がる！'},
-  {name:'みかん',col:'#E87818',desc:'みかんと交換！甘い香りが！'},
-  {name:'ぬの',  col:'#3860C8',desc:'ぬのと交換！上等な品だ！'},
-  {name:'みそ',  col:'#784018',desc:'みそと交換！美味そうだ！'},
-  {name:'さかな',col:'#18A8B8',desc:'さかなと交換！新鮮だ！'},
-  {name:'つぼ',  col:'#A848B8',desc:'つぼと交換！立派だ！'},
-  {name:'うま',  col:'#B87828',desc:'うまと交換！長者に近い！'},
-  {name:'こがね',col:'#F0C000',desc:'🎉 こがねを得た！長者になった！'},
-];
 
 // ── AUDIO ─────────────────────────────────────────────────
 let aCtx=null;
@@ -370,8 +366,8 @@ function drawPlayer(py,frame,invuln,lv){
   ctx.beginPath();ctx.ellipse(rr(x+13),GY+3,15,4,0,0,Math.PI*2);ctx.fill();
 
   // 着物の色（レベルに応じて変化）
-  const kc=lv>=7?'#880000':lv>=4?'#284848':'#5A3818';
-  const ks=lv>=7?'#540000':lv>=4?'#162828':'#382208';
+  const kc=lv>=4?'#880000':lv>=2?'#284848':'#5A3818';
+  const ks=lv>=4?'#540000':lv>=2?'#162828':'#382208';
 
   // ══ 後足 ══════════════════════════════════════════════════
   ctx.fillStyle=OL;
@@ -636,92 +632,128 @@ function drawPlayer(py,frame,invuln,lv){
   if(lv>0) drawItemIcon(rr(x+20),rr(by+20),lv,0.54);
 }
 
-// ── Item sprite (side) ─────────────────────────────────────
+// ── Chain icon (shared: player sprite + slot UI) ───────────
+function drawChainIcon(idx,s){
+  if(idx===0){ // わら
+    ctx.fillStyle='#C8A030';
+    for(let i=0;i<3;i++) ctx.fillRect(rr((i*3-3)*s),-rr(8*s),rr(2*s),rr(9*s));
+    ctx.fillStyle='#906010'; ctx.fillRect(-rr(3*s),-rr(4*s),rr(9*s),rr(2*s));
+  } else if(idx===1){ // アブ
+    ctx.fillStyle='#1A2A08';
+    ctx.beginPath();ctx.ellipse(0,-rr(3*s),rr(3*s),rr(5*s),0,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='rgba(160,220,255,0.72)';
+    ctx.beginPath();ctx.ellipse(-rr(5*s),-rr(3*s),rr(5*s),rr(2.5*s),0.3,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.ellipse(rr(5*s),-rr(3*s),rr(5*s),rr(2.5*s),-0.3,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#C01010';
+    ctx.fillRect(-rr(2*s),-rr(7*s),rr(2*s),rr(2*s));
+    ctx.fillRect(rr(1*s), -rr(7*s),rr(2*s),rr(2*s));
+  } else if(idx===2){ // みかん
+    ctx.fillStyle='#E87010';
+    ctx.beginPath();ctx.arc(0,-rr(4*s),rr(5*s),0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,0.25)';
+    ctx.beginPath();ctx.arc(-rr(1*s),-rr(6*s),rr(2*s),0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#186818';ctx.fillRect(-rr(1*s),-rr(10*s),rr(2*s),rr(5*s));
+  } else if(idx===3){ // ぬの
+    ctx.fillStyle='#2858C0';ctx.fillRect(-rr(4*s),-rr(8*s),rr(11*s),rr(8*s));
+    ctx.fillStyle='#1A3880';
+    for(let i=0;i<3;i++) ctx.fillRect(rr((i*3.5-4)*s),-rr(8*s),rr(2*s),rr(8*s));
+    ctx.fillStyle='rgba(255,255,255,0.15)';ctx.fillRect(-rr(3*s),-rr(8*s),rr(6*s),rr(2*s));
+  } else { // うま
+    ctx.fillStyle='#A87020';
+    ctx.fillRect(-rr(7*s),-rr(7*s),rr(13*s),rr(5*s));
+    ctx.fillRect(rr(4*s),-rr(12*s),rr(4*s),rr(6*s));
+    ctx.fillRect(rr(4*s),-rr(14*s),rr(4*s),rr(3*s));
+    for(let i=0;i<4;i++) ctx.fillRect(rr(-5*s+i*3.5*s),-rr(1*s),rr(2*s),rr(5*s));
+    ctx.fillStyle='#605010';ctx.fillRect(rr(4*s),-rr(12*s),rr(2*s),rr(5*s));
+    ctx.fillStyle='#805020';ctx.fillRect(-rr(8*s),-rr(6*s),rr(2*s),rr(5*s));
+  }
+}
+// ── Player-sprite item icon ─────────────────────────────────
 function drawItemIcon(x,y,lv,s){
   ctx.save(); ctx.translate(rr(x),rr(y));
-  const c=ITEMS[Math.min(lv,8)].col;
-  if(lv===0){
-    ctx.fillStyle='#C8A030';
-    for(let i=0;i<4;i++) ctx.fillRect(rr(i*3*s),-rr(8*s),rr(2*s),rr(9*s));
-    ctx.fillStyle='#906010'; ctx.fillRect(0,-rr(4*s),rr(9*s),rr(2*s));
-  } else if(lv===1){
-    ctx.fillStyle='#E8C010'; ctx.fillRect(-1,-rr(5*s),rr(11*s),rr(7*s));
-    ctx.fillStyle='#E84000'; ctx.fillRect(rr(1*s),-rr(3*s),rr(7*s),rr(3*s));
-    ctx.fillStyle='rgba(255,255,200,0.4)'; ctx.fillRect(rr(2*s),-rr(5*s),rr(4*s),rr(2*s));
-  } else if(lv===2){
-    ctx.fillStyle='#E87010'; ctx.beginPath(); ctx.arc(0,-rr(4*s),rr(5*s),0,Math.PI*2); ctx.fill();
-    ctx.fillStyle='rgba(255,255,255,0.25)'; ctx.beginPath(); ctx.arc(rr(-1*s),-rr(6*s),rr(2*s),0,Math.PI*2); ctx.fill();
-    ctx.fillStyle='#186818'; ctx.fillRect(-1,-rr(10*s),rr(2*s),rr(5*s));
-  } else if(lv===3){
-    ctx.fillStyle='#2858C0'; ctx.fillRect(-1,-rr(8*s),rr(12*s),rr(8*s));
-    ctx.fillStyle='#1A3880';
-    for(let i=0;i<3;i++) ctx.fillRect(rr(i*4*s),-rr(8*s),rr(2*s),rr(8*s));
-    ctx.fillStyle='rgba(255,255,255,0.15)'; ctx.fillRect(0,-rr(8*s),rr(6*s),rr(2*s));
-  } else if(lv===4){
-    ctx.fillStyle='#703010'; ctx.fillRect(0,-rr(10*s),rr(11*s),rr(11*s));
-    ctx.fillStyle='#502008';
-    ctx.fillRect(-1,-rr(8*s),rr(13*s),rr(2*s));
-    ctx.fillRect(-1,-rr(3*s),rr(13*s),rr(2*s));
-    ctx.fillStyle='rgba(255,200,100,0.2)'; ctx.fillRect(rr(2*s),-rr(7*s),rr(7*s),rr(4*s));
-  } else if(lv===5){
-    ctx.fillStyle='#18A0B0';
-    ctx.beginPath(); ctx.ellipse(rr(5*s),-rr(4*s),rr(7*s),rr(4*s),0,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle='#0878888';
-    ctx.beginPath(); ctx.moveTo(rr(12*s),-rr(7*s)); ctx.lineTo(rr(16*s),-rr(3*s)); ctx.lineTo(rr(12*s),0); ctx.fill();
-    ctx.fillStyle='#E8C000'; ctx.fillRect(rr(3*s),-rr(5*s),rr(2*s),rr(2*s));
-  } else if(lv===6){
-    ctx.fillStyle='#A040A8';
-    ctx.beginPath(); ctx.ellipse(rr(5*s),-rr(5*s),rr(5*s),rr(7*s),0,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle='#782880'; ctx.fillRect(rr(2*s),-rr(13*s),rr(6*s),rr(5*s));
-    ctx.fillStyle='rgba(255,200,255,0.20)';
-    ctx.beginPath(); ctx.ellipse(rr(3*s),-rr(7*s),rr(2*s),rr(3*s),0,0,Math.PI*2); ctx.fill();
-  } else if(lv===7){
-    ctx.fillStyle='#A87020';
-    ctx.fillRect(0,-rr(9*s),rr(14*s),rr(6*s));
-    ctx.fillRect(rr(10*s),-rr(14*s),rr(5*s),rr(7*s));
-    for(let i=0;i<4;i++) ctx.fillRect(rr(i*3.4*s),-rr(3*s),rr(3*s),rr(6*s));
-    ctx.fillStyle='#605010';
-    ctx.fillRect(rr(10*s),-rr(16*s),rr(3*s),rr(4*s));  // mane
-  } else {
-    ctx.fillStyle='#E8B800';
-    ctx.beginPath(); ctx.arc(rr(5*s),-rr(5*s),rr(6*s),0,Math.PI*2); ctx.fill();
-    ctx.fillStyle='#C89000';
-    ctx.beginPath(); ctx.arc(rr(5*s),-rr(5*s),rr(4*s),0,Math.PI*2); ctx.fill();
-    ctx.fillStyle='rgba(255,255,200,0.45)';
-    ctx.beginPath(); ctx.arc(rr(3*s),-rr(7*s),rr(2*s),0,Math.PI*2); ctx.fill();
-    ctx.fillStyle='#8A5800'; ctx.font=`bold ${rr(7*s)}px monospace`; ctx.textAlign='center'; ctx.fillText('金',rr(5*s),rr(-1*s));
-  }
+  drawChainIcon(Math.min(lv,4),s);
   ctx.restore();
+}
+// ── Chain collection UI (5 slots, HUD) ─────────────────────
+function drawChainSlots(){
+  const W=32,H=26,GAP=3;
+  const totalW=5*W+4*GAP;
+  const sx=rr((GW-totalW)/2), sy=26;
+  for(let i=0;i<5;i++){
+    const bx=sx+i*(W+GAP), has=items[i];
+    ctx.fillStyle=has?'rgba(30,20,0,0.84)':'rgba(8,6,2,0.72)';
+    ctx.fillRect(bx,sy,W,H);
+    ctx.fillStyle=has?CHAIN[i].col:'#2A2018';
+    ctx.fillRect(bx,sy,W,2);
+    ctx.save();
+    ctx.translate(bx+W/2,sy+H/2+3);
+    if(!has) ctx.globalAlpha=0.20;
+    drawChainIcon(i,0.52);
+    ctx.globalAlpha=1;
+    ctx.restore();
+    ctx.fillStyle=has?CHAIN[i].col:'#3A2C1A';
+    ctx.font='7px monospace'; ctx.textAlign='center';
+    ctx.fillText(CHAIN[i].name,bx+W/2,sy+H+8);
+    // 矢印
+    if(i<4){
+      const arrowOn=has&&items[i+1];
+      ctx.fillStyle=arrowOn?'#D0A000':'rgba(60,48,32,0.7)';
+      ctx.fillRect(bx+W+1,sy+H/2-1,GAP-2,2);
+    }
+  }
+  ctx.textAlign='left';
 }
 
 // ══════════════════════════════════════════════════════════
 // DRAW: ENTITIES
 // ══════════════════════════════════════════════════════════
 
-// Treasure box collectible
-function drawCollectible(x,y,nextLv,frame){
-  const fy=y+Math.sin(frame*0.09)*4;
-  // Glow
-  const grd=ctx.createRadialGradient(rr(x+11),rr(fy+8),2,rr(x+11),rr(fy+8),20);
-  grd.addColorStop(0,ITEMS[nextLv].col+'CC');
-  grd.addColorStop(1,'transparent');
-  ctx.fillStyle=grd; ctx.beginPath(); ctx.arc(rr(x+11),rr(fy+8),20,0,Math.PI*2); ctx.fill();
-  // Box body
-  ctx.fillStyle='#3A1E00'; ctx.fillRect(rr(x),rr(fy),22,17);
-  ctx.fillStyle='#7A4810'; ctx.fillRect(rr(x+1),rr(fy+1),20,15);
-  // Wood grain
+// NPC 旅人（物々交換）
+function drawNPC(x,y,cidx,fr){
+  const c=CHAIN[cidx];
+  const fy=rr(y+Math.sin(fr*0.09)*3);
+  const nc=['#3A6818','#C86810','#1A4898','#8A5818'][cidx-1];
+  // グロー
+  ctx.fillStyle=c.col+'2A';
+  ctx.beginPath();ctx.arc(rr(x+16),rr(fy+14),28,0,Math.PI*2);ctx.fill();
+  // ボディ
+  ctx.fillStyle='#120800';ctx.fillRect(rr(x+4)-1,rr(fy-5)-1,18,22);
+  ctx.fillStyle=nc;ctx.fillRect(rr(x+4),rr(fy-5),17,21);
+  // 頭
+  ctx.fillStyle='#DCA870';ctx.fillRect(rr(x+5),rr(fy-17),12,13);
+  // 帽子
+  ctx.fillStyle=nc;ctx.fillRect(rr(x+3),rr(fy-23),14,7);
+  ctx.fillStyle='#0A0600';ctx.fillRect(rr(x+2),rr(fy-17),16,2);
+  // 目
+  ctx.fillStyle='#0A0400';
+  ctx.fillRect(rr(x+8),rr(fy-13),3,3);
+  ctx.fillRect(rr(x+13),rr(fy-13),3,3);
+  // 口
+  const hasReq=items[cidx-1];
+  ctx.fillStyle=hasReq?'#C87040':'#8A4030';
+  ctx.fillRect(rr(x+9),rr(fy-8),6,2);
+  if(hasReq){ctx.fillRect(rr(x+9),rr(fy-7),2,2);ctx.fillRect(rr(x+13),rr(fy-7),2,2);}
+  // 腕
+  ctx.fillStyle=nc;
+  ctx.fillRect(rr(x-2),rr(fy-2),7,8);ctx.fillRect(rr(x+17),rr(fy-2),7,8);
+  // 足
+  ctx.fillRect(rr(x+5),rr(fy+16),7,9);ctx.fillRect(rr(x+12),rr(fy+16),7,9);
+  ctx.fillStyle='#DCA870';
+  ctx.fillRect(rr(x+4),rr(fy+24),8,4);ctx.fillRect(rr(x+11),rr(fy+24),8,4);
+  // 影
   ctx.fillStyle='rgba(0,0,0,0.18)';
-  ctx.fillRect(rr(x+1),rr(fy+5),20,1);
-  ctx.fillRect(rr(x+1),rr(fy+10),20,1);
-  // Lid highlight
-  ctx.fillStyle='rgba(255,200,100,0.20)'; ctx.fillRect(rr(x+2),rr(fy+1),8,3);
-  // Lock
-  ctx.fillStyle='#D0A000'; ctx.fillRect(rr(x+7),rr(fy+5),8,6);
-  ctx.fillStyle='#A07800'; ctx.fillRect(rr(x+9),rr(fy+6),4,4);
-  ctx.fillStyle='#181000'; ctx.fillRect(rr(x+10),rr(fy+7),2,2);
-  // Label
-  ctx.font='9px monospace'; ctx.fillStyle=ITEMS[nextLv].col; ctx.textAlign='center';
-  ctx.fillText(ITEMS[nextLv].name,rr(x+11),rr(fy-4));
+  ctx.beginPath();ctx.ellipse(rr(x+14),GY+3,16,4,0,0,Math.PI*2);ctx.fill();
+  // 吹き出し
+  const bx=rr(x+30), by=rr(fy-40);
+  ctx.fillStyle='rgba(255,252,220,0.96)';ctx.fillRect(bx,by,58,32);
+  ctx.fillStyle=c.col;ctx.fillRect(bx,by,58,3);
+  ctx.fillStyle='rgba(255,252,220,0.96)';
+  ctx.beginPath();ctx.moveTo(bx,by+13);ctx.lineTo(bx-7,by+17);ctx.lineTo(bx,by+22);ctx.fill();
+  ctx.fillStyle=hasReq?'#1A4008':'#880808';
+  ctx.font='bold 9px monospace';ctx.textAlign='center';
+  ctx.fillText(hasReq?c.name:'？？？',bx+29,by+15);
+  ctx.font='7px monospace';
+  ctx.fillText(hasReq?'もらえる！':CHAIN[cidx-1].name+'が必要',bx+29,by+27);
   ctx.textAlign='left';
 }
 
@@ -1098,19 +1130,18 @@ function drawOihagi(ex,ey,phase,frame){
 // GAME STATE
 // ══════════════════════════════════════════════════════════
 let state='start';
-let dist,speed,py,vy,grounded,lives,itemLv,invuln,invT,frame,entities,spawnD,stageIdx,msg,msgT;
-let itemPopT,itemPopFrom,itemPopTo;
+let dist,speed,py,vy,grounded,lives,invuln,invT,frame,entities,spawnD,stageIdx,msg,msgT;
 let bridgeActive,bridgeStartDist,bridgeHoles,bridgeDebris,bridgeWarnDone;
-let itemStack,clearRank,clearScore;
+let items,clearRank,npcPopT,npcPopMsg;
 
 function initGame(){
   dist=0; speed=5; py=GY-46; vy=0; grounded=true;
-  lives=3; itemLv=0; invuln=false; invT=0; frame=0;
+  lives=3; invuln=false; invT=0; frame=0;
   entities=[]; spawnD=0; stageIdx=0; msg=''; msgT=0;
-  itemPopT=0; itemPopFrom=0; itemPopTo=0;
   bridgeActive=false; bridgeStartDist=BRIDGE_EVERY;
   bridgeHoles=[]; bridgeDebris=[]; bridgeWarnDone=false;
-  itemStack=1; clearRank=4; clearScore=0;
+  items=[true,false,false,false,false];
+  clearRank=4; npcPopT=0; npcPopMsg='';
   state='playing';
 }
 
@@ -1118,8 +1149,9 @@ function spawnEntity(){
   if(dist-spawnD < 108+Math.random()*135) return;
   spawnD=dist;
   const r=Math.random(); let e=null;
-  if(r>0.87)      e={type:'item',  sub:'item',       x:GW+10,y:GY-58,vy:0,alive:true};
-  else if(r>0.80) e={type:'heart', sub:'heart',       x:GW+10,y:GY-66,vy:0,alive:true};
+  const nextChain=items.findIndex((v,i)=>i>0&&!v); // 次に必要なチェーンアイテム
+  if(r>0.88 && nextChain>0) e={type:'npc',chainIdx:nextChain,x:GW+10,y:GY-56,vy:0,alive:true};
+  else if(r>0.80) e={type:'heart',sub:'heart',x:GW+10,y:GY-66,vy:0,alive:true};
   else{
     const o=Math.random();
     if(o<0.22)      e={type:'obstacle',sub:'rock',       x:GW,    y:GY-20,vy:0,alive:true};
@@ -1179,11 +1211,15 @@ function updateBridge(){
       const wi=raw%BPLANK_PITCH;
       if(pi<bridgeHoles.length&&bridgeHoles[pi]&&wi<BPLANK_W){
         invuln=true; invT=120; lives=Math.max(0,lives-1);
-        if(itemStack>1) itemStack--;
-        else if(itemLv>0){itemLv--; itemStack=1;}
+        const ownedB=items.map((v,i)=>v&&i>0?i:-1).filter(i=>i>=0);
+        let bridgeLostName='';
+        if(ownedB.length>0){
+          const lostB=ownedB[Math.floor(Math.random()*ownedB.length)];
+          items[lostB]=false; bridgeLostName=CHAIN[lostB].name;
+        }
         spawnBridgeDebris(PX+13);
         SFX.hit();
-        msg='板が抜けた！ライフと'+ITEMS[itemLv].name+'が！'; msgT=240;
+        msg='板が抜けた！'+(bridgeLostName?bridgeLostName+'を落とした！':'ライフ-1'); msgT=240;
         [220,180,140].forEach((f,k)=>setTimeout(()=>beep(f,0.22,'sawtooth',0.13),k*90));
         if(lives<=0){bridgeActive=false;state='gameover';SFX.over();}
       }
@@ -1280,15 +1316,19 @@ function update(){
 
   if(invuln&&--invT<=0) invuln=false;
   if(msgT>0&&--msgT===0) msg='';
-  if(itemPopT>0) --itemPopT;
+  if(npcPopT>0) --npcPopT;
 
-  // Goal check
+  // Goal check (ゴール判定)
   if(dist>=GOAL_DIST){
-    clearScore=ITEM_VAL[itemLv]*itemStack;
-    clearRank=RANKS.length-1;
-    for(let i=0;i<RANKS.length;i++){if(clearScore>=RANKS[i].score){clearRank=i;break;}}
+    const allFive=items.every(v=>v);
+    if(allFive)                      clearRank=0;
+    else if(items[4])                clearRank=1;
+    else if(items[3])                clearRank=2;
+    else if(items[2]||items[1])     clearRank=3;
+    else                             clearRank=4;
     state='clear';
-    [523,659,784,1047,1319].forEach((f,i)=>setTimeout(()=>beep(f,0.35,'triangle',0.14),i*160));
+    if(allFive) [523,659,784,1047,1319].forEach((f,i)=>setTimeout(()=>beep(f,0.40,'triangle',0.15),i*150));
+    else        [440,550,440,330].forEach((f,i)=>setTimeout(()=>beep(f,0.25,'triangle',0.12),i*180));
     return;
   }
 
@@ -1315,43 +1355,37 @@ function update(){
         if(aabb(px_,py_,pw,ph,ex,ey,ew,eh)){
           e.alive=false; invuln=true; SFX.hit();
           if(e.sub==='oihagi'){
-            // 追い剥ぎ：全没収→わら×1
-            itemLv=0; itemStack=1; invT=180;
+            items=[true,false,false,false,false]; invT=180;
             msg='追い剥ぎに持ち物を全部奪われた！'; msgT=280;
             [440,330,220].forEach((f,i)=>setTimeout(()=>beep(f,0.18,'sawtooth',0.14),i*90));
           } else {
-            // 障害物：アイテム1個落とす
-            if(itemStack>1){
-              itemStack--; invT=110;
-              msg=ITEMS[itemLv].name+'を1つ落とした！'; msgT=180;
-            } else if(itemLv>0){
-              itemLv--; itemStack=Math.max(1,EXCHANGE[itemLv]-1); invT=110;
-              msg=ITEMS[itemLv].name+'に逆戻り…'; msgT=200;
+            const owned=items.map((v,i)=>v&&i>0?i:-1).filter(i=>i>=0);
+            if(owned.length>0){
+              const lost=owned[Math.floor(Math.random()*owned.length)];
+              items[lost]=false; invT=110;
+              msg=CHAIN[lost].name+'を落とした！'; msgT=200;
             } else {
               lives=Math.max(0,lives-1); invT=120;
-              msg='わらも無くした！'; msgT=180;
+              msg='わらを落とした！ライフ-1'; msgT=180;
               if(lives<=0){state='gameover'; SFX.over();}
             }
           }
         }
-      } else if(e.type==='item'){
-        if(aabb(px_,py_,pw,ph, e.x+m,e.y+m,18,13)){
+      } else if(e.type==='npc'){
+        if(aabb(px_,py_,pw,ph, e.x+4,e.y+4,20,44)){
           e.alive=false;
-          itemPopFrom=itemLv;
-          const prevStack=itemStack;
-          itemStack++;
-          const need=EXCHANGE[itemLv];
-          if(itemLv<8 && itemStack>=need){
-            itemLv=Math.min(8,itemLv+1); itemStack=1;
-            itemPopTo=itemLv; itemPopT=110;
-            msg=ITEMS[itemLv].desc; msgT=220;
+          const ci=e.chainIdx;
+          if(items[ci-1]){
+            if(!items[ci]){
+              items[ci]=true;
+              npcPopMsg=CHAIN[ci-1].name+'→'+CHAIN[ci].name+'！交換成立！';
+            } else {
+              npcPopMsg=CHAIN[ci].name+'はもう持っている！';
+            }
           } else {
-            itemPopTo=itemLv; itemPopT=60;
-            if(itemLv<8) msg=ITEMS[itemLv].name+' ×'+itemStack+'！あと'+(need-itemStack)+'個で交換';
-            else         msg='こがねを'+itemStack+'個持っている！';
-            msgT=160;
+            npcPopMsg=CHAIN[ci-1].name+'があれば交換してやるんだが…';
           }
-          SFX.get();
+          npcPopT=200; SFX.get();
         }
       } else if(e.type==='heart'){
         if(aabb(px_,py_,pw,ph, e.x+m,e.y+m,14,15)){
@@ -1365,81 +1399,32 @@ function update(){
 }
 
 // ══════════════════════════════════════════════════════════
-// DRAW: ITEM BADGE (キャラ頭上の所持アイテム表示)
+// DRAW: NPC POPUP (交換結果メッセージ)
 // ══════════════════════════════════════════════════════════
-function drawItemBadge(py,lv){
-  const col=ITEMS[lv].col;
-  const topY=rr(GY+(py-GY-20)*PSCALE)-18;
-  const cx=rr(PX+13);
-  const W=48, H=18;
-  ctx.fillStyle='rgba(8,4,0,0.88)';
-  ctx.fillRect(cx-W/2,topY-H,W,H);
-  ctx.fillStyle=col;
-  ctx.fillRect(cx-W/2,topY-H,W,2);
-  ctx.fillStyle='#F0E080';
-  ctx.font='bold 10px monospace';
-  ctx.textAlign='center';
-  ctx.fillText(ITEMS[lv].name+' ×'+itemStack,cx,topY-H+12);
-  // Exchange progress bar
-  if(lv<8){
-    const need=EXCHANGE[lv];
-    const pw=rr((W-4)*itemStack/need);
-    ctx.fillStyle='rgba(255,255,255,0.12)';
-    ctx.fillRect(cx-W/2+2,topY-4,W-4,3);
-    ctx.fillStyle=col;
-    ctx.fillRect(cx-W/2+2,topY-4,pw,3);
-  }
-  ctx.fillStyle='rgba(8,4,0,0.88)';
-  ctx.beginPath();
-  ctx.moveTo(cx-4,topY); ctx.lineTo(cx+4,topY); ctx.lineTo(cx,topY+5);
-  ctx.fill();
-  ctx.textAlign='left';
-}
-
-// ══════════════════════════════════════════════════════════
-// DRAW: ITEM POPUP (アイテム交換演出)
-// ══════════════════════════════════════════════════════════
-function drawItemPopup(){
-  if(itemPopT<=0) return;
-  const isUpgrade=(itemPopFrom!==itemPopTo);
-  const dur=isUpgrade?110:60;
-  const t=itemPopT/dur;
+function drawNpcPopup(){
+  if(npcPopT<=0) return;
+  const t=npcPopT/200;
   const a=Math.min(1,t*4);
-  const sc=1+(1-t)*(isUpgrade?0.28:0.12);
   const cx=GW/2, cy=GH/2-18;
-
   ctx.fillStyle=`rgba(8,4,0,${0.88*a})`;
-  ctx.fillRect(cx-140,cy-26,280,44);
-  ctx.fillStyle=`rgba(240,180,0,${(isUpgrade?0.6:0.3)*a})`;
-  ctx.fillRect(cx-140,cy-26,280,2);
-  ctx.fillRect(cx-140,cy+16,280,2);
-
+  ctx.fillRect(cx-160,cy-26,320,44);
+  ctx.fillStyle=`rgba(200,160,0,${0.6*a})`;
+  ctx.fillRect(cx-160,cy-26,320,2);
+  ctx.fillRect(cx-160,cy+16,320,2);
   ctx.save();
-  ctx.translate(cx,cy); ctx.scale(sc,sc);
+  ctx.translate(cx,cy);
   ctx.textAlign='center';
-  if(isUpgrade){
-    // 物々交換演出
-    ctx.fillStyle=`rgba(255,220,60,${a})`;
-    ctx.font='bold 20px monospace';
-    ctx.fillText(ITEMS[itemPopFrom].name+' → '+ITEMS[itemPopTo].name+'！',0,0);
-    ctx.fillStyle=`rgba(200,160,40,${a*0.7})`;
-    ctx.font='11px monospace';
-    ctx.fillText('物々交換成立！',0,16);
-  } else {
-    // スタック追加
-    ctx.fillStyle=`rgba(180,240,120,${a})`;
-    ctx.font='bold 16px monospace';
-    ctx.fillText('+1  '+ITEMS[itemPopTo].name+' ×'+itemStack,0,0);
-  }
+  ctx.fillStyle=`rgba(255,220,60,${a})`;
+  ctx.font='bold 16px monospace';
+  ctx.fillText(npcPopMsg,0,4);
   ctx.restore();
   ctx.textAlign='left';
-
-  if(isUpgrade&&t>0.35){
-    const seed=Math.floor(itemPopT/2);
+  if(t>0.5){
+    const seed=Math.floor(npcPopT/2);
     const pcols=['#FFE040','#FF9020','#80FF60','#40E8FF','#FF60C0'];
-    for(let i=0;i<12;i++){
+    for(let i=0;i<10;i++){
       ctx.fillStyle=pcols[i%5];
-      ctx.fillRect(cx-120+((seed*41+i*67)%240),cy-22+((seed*59+i*37)%36),2,2);
+      ctx.fillRect(cx-120+((seed*41+i*67)%240),cy-20+((seed*59+i*37)%36),2,2);
     }
   }
 }
@@ -1458,21 +1443,8 @@ function drawHUD(){
   ctx.fillStyle='#E8B800'; ctx.font='bold 13px monospace'; ctx.textAlign='center';
   ctx.fillText(STAGES[stageIdx].name+'  ✦  '+Math.floor(dist)+'歩', GW/2, 18);
   ctx.textAlign='left';
-  // Item stack display (top-right)
-  const itcol=ITEMS[itemLv].col;
-  ctx.fillStyle='rgba(8,4,0,0.72)'; ctx.fillRect(GW-106,4,102,22);
-  ctx.fillStyle=itcol; ctx.fillRect(GW-106,4,102,2);
-  ctx.fillStyle=itcol; ctx.font='bold 12px monospace'; ctx.textAlign='right';
-  ctx.fillText(ITEMS[itemLv].name+' ×'+itemStack, GW-6, 20);
-  // Exchange progress (→ next item)
-  if(itemLv<8){
-    const need=EXCHANGE[itemLv];
-    ctx.fillStyle='rgba(255,255,255,0.10)'; ctx.fillRect(GW-106,26,102,4);
-    ctx.fillStyle=itcol;
-    ctx.fillRect(GW-106,26,rr(102*Math.min(itemStack,need)/need),4);
-    ctx.fillStyle='rgba(220,200,140,0.55)'; ctx.font='9px monospace';
-    ctx.fillText('→'+ITEMS[itemLv+1].name+' あと'+(need-Math.min(itemStack,need))+'個',GW-6,38);
-  }
+  // Chain item slots (5 slots centered, below stage label)
+  drawChainSlots();
   ctx.textAlign='left';
   // Goal indicator
   ctx.fillStyle='rgba(220,180,0,0.40)'; ctx.fillRect(0,GH-4,rr(GW*Math.min(dist,GOAL_DIST)/GOAL_DIST),4);
@@ -1640,15 +1612,16 @@ function drawClearScreen(){
   ctx.fillStyle='rgba(220,200,160,0.70)'; ctx.font='13px monospace';
   ctx.fillText(R.sub,GW/2,84);
 
-  // スコア
+  // 収集状況
   ctx.fillStyle='rgba(240,180,0,0.40)'; ctx.fillRect(GW/2-120,94,240,2);
   ctx.fillStyle='#E0C880'; ctx.font='12px monospace';
-  ctx.fillText('最終アイテム：'+ITEMS[itemLv].name+' ×'+itemStack,GW/2,112);
+  const haveNames=CHAIN.filter((_,i)=>items[i]).map(c=>c.name).join('・');
+  ctx.fillText('所持アイテム：'+haveNames,GW/2,112);
   ctx.fillStyle='#F0D060'; ctx.font='bold 13px monospace';
-  ctx.fillText('評価スコア：'+clearScore+' 両',GW/2,132);
+  ctx.fillText('旅の歩み：'+Math.floor(dist)+' 歩',GW/2,132);
 
   // ランクグレード
-  const grades=['S','A','B','C','D'];
+  const grades=['SS','A','B','C','D'];
   ctx.shadowColor=R.col; ctx.shadowBlur=12;
   ctx.fillStyle=R.col; ctx.font='bold 28px monospace';
   ctx.fillText('Rank '+grades[clearRank],GW/2,158);
@@ -1716,12 +1689,8 @@ function drawGameOverScreen(){
   ctx.fillStyle='#E8D8A0'; ctx.font='16px monospace';
   ctx.fillText('旅の歩み：'+Math.floor(dist)+' 歩',GW/2,160);
   ctx.fillStyle='#E8B000'; ctx.font='14px monospace';
-  ctx.fillText('最後の持ち物：'+ITEMS[itemLv].name+' ×'+itemStack,GW/2,186);
-
-  if(itemLv===8){
-    ctx.fillStyle='#F0C000'; ctx.font='bold 17px monospace';
-    ctx.fillText('🎉 長者達成！おめでとう！',GW/2,222);
-  }
+  const goNames=CHAIN.filter((_,i)=>items[i]).map(c=>c.name).join('・');
+  ctx.fillText('持ち物：'+goNames,GW/2,186);
 
   if(Math.floor(Date.now()/600)%2===0){
     ctx.fillStyle='#E8B800'; ctx.font='bold 13px monospace';
@@ -1745,32 +1714,30 @@ function loop(){
     update();
     for(const e of entities){
       if(!e.alive) continue;
-      if(e.sub==='rock')                drawRock(e.x,e.y);
+      if(e.type==='npc')                drawNPC(e.x,e.y,e.chainIdx,frame);
+      else if(e.sub==='rock')           drawRock(e.x,e.y);
       else if(e.sub==='kite')           drawKite(e.x,e.y,frame);
-      else if(e.sub.startsWith('crow')) drawCrow(e.x,e.y,e.sub,frame);
+      else if(e.sub&&e.sub.startsWith('crow')) drawCrow(e.x,e.y,e.sub,frame);
       else if(e.sub==='oihagi'){
-        // 追い剥ぎをESCALEでスケールアップ（足元基準）
         const ecx=rr(e.x+15);
         ctx.save();
         ctx.translate(ecx,GY); ctx.scale(ESCALE,ESCALE); ctx.translate(-ecx,-GY);
         drawOihagi(e.x,e.y,e.phase,frame);
         ctx.restore();
       }
-      else if(e.sub==='item')           drawCollectible(e.x,e.y,Math.min(itemLv+1,8),frame);
       else if(e.sub==='heart')          drawHeart(e.x,e.y,frame);
     }
     // プレイヤーをPSCALEでスケールアップ（足元基準）
     ctx.save();
     ctx.translate(rr(PX+13),GY); ctx.scale(PSCALE,PSCALE); ctx.translate(-rr(PX+13),-GY);
-    drawPlayer(py,frame,invuln,itemLv);
+    drawPlayer(py,frame,invuln,items.filter(Boolean).length-1);
     ctx.restore();
-    drawItemBadge(py,itemLv);
-    drawItemPopup();
+    drawNpcPopup();
     drawBridgeDebris();
     drawHUD();
     drawMessage();
   } else if(state==='gameover'){
-    drawPlayer(py,frame,false,itemLv);
+    drawPlayer(py,frame,false,items?items.filter(Boolean).length-1:0);
     drawGameOverScreen();
     frame++;
   } else if(state==='clear'){
