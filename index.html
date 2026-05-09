@@ -28,8 +28,10 @@ html,body{
     <canvas id="game"></canvas>
   </div>
 </div>
+<div id="dbg" style="position:fixed;top:0;left:0;right:0;background:#c00;color:#fff;font-size:15px;padding:6px 8px;z-index:9999">HTML OK / JS未起動</div>
 <script>
 'use strict';
+document.getElementById('dbg').textContent='JS起動OK';
 
 // ── CANVAS SETUP ──────────────────────────────────────────
 const GW=360; let GH=640; // GH updated dynamically in resize()
@@ -2127,9 +2129,9 @@ function drawGameOverScreen(){
 stageIdx=0; frame=0;
 
 function loop(){
+  document.getElementById('dbg').textContent='ループ実行中 frame='+frame;
   try{
   ctx.clearRect(0,0,GW,GH);
-  // DIAG: 緑帯 (描画確認)
   ctx.fillStyle='#00FF00'; ctx.fillRect(0,0,GW,6);
 
   if(state==='ending'){
