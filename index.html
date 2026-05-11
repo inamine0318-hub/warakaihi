@@ -792,39 +792,20 @@ function drawPlayerOnHorse(py,frame,invuln,lv){
   ctx.fillStyle=skS;
   ctx.fillRect(rr(x+4),rr(py+3),3,5);
   ctx.fillRect(rr(x+5),rr(py+7),14,2);
-  ctx.fillStyle='rgba(220,100,80,0.28)';
-  ctx.fillRect(rr(x+4),rr(py-1),5,3);
-  ctx.fillRect(rr(x+15),rr(py-1),5,3);
+  ctx.fillStyle='rgba(220,100,80,0.32)';
+  ctx.fillRect(rr(x+3),rr(py+0),5,3);
+  ctx.fillRect(rr(x+16),rr(py+0),5,3);
 
-  // Rider brows (friendly, simple)
-  ctx.fillStyle='#18100A';
-  ctx.fillRect(rr(x+6),rr(py-8),5,2);
-  ctx.fillRect(rr(x+15),rr(py-8),5,2);
-
-  // Rider eyes (big dot eyes)
+  // Rider eyes (パワプロ風・大きな黒丸・口なし)
   ctx.fillStyle=OL;
-  ctx.fillRect(rr(x+5),rr(py-6),6,6);
-  ctx.fillRect(rr(x+15),rr(py-6),6,6);
-  ctx.fillStyle='#FFFCE0';
-  ctx.fillRect(rr(x+6),rr(py-6),4,5);
-  ctx.fillRect(rr(x+16),rr(py-6),4,5);
+  ctx.fillRect(rr(x+3),rr(py-8),9,9);
+  ctx.fillRect(rr(x+14),rr(py-8),9,9);
   ctx.fillStyle='#0A0604';
-  ctx.fillRect(rr(x+6),rr(py-5),4,5);
-  ctx.fillRect(rr(x+16),rr(py-5),4,5);
+  ctx.fillRect(rr(x+4),rr(py-7),7,7);
+  ctx.fillRect(rr(x+15),rr(py-7),7,7);
   ctx.fillStyle='#FFFFFF';
-  ctx.fillRect(rr(x+6),rr(py-6),2,2);
-  ctx.fillRect(rr(x+16),rr(py-6),2,2);
-
-  // Rider mouth (smile)
-  ctx.fillStyle=OL;
-  ctx.fillRect(rr(x+8),rr(py+4),8,3);
-  ctx.fillStyle='#2A1008';
-  ctx.fillRect(rr(x+9),rr(py+4),6,1);
-  ctx.fillStyle=skS;
-  ctx.fillRect(rr(x+9),rr(py+5),6,1);
-  ctx.fillStyle='#18100A';
-  ctx.fillRect(rr(x+8),rr(py+5),1,1);
-  ctx.fillRect(rr(x+16),rr(py+5),1,1);
+  ctx.fillRect(rr(x+4),rr(py-7),3,2);
+  ctx.fillRect(rr(x+15),rr(py-7),3,2);
 
   // Hat (amigasa, same as drawPlayer)
   ctx.fillStyle=OL;
@@ -1016,40 +997,21 @@ function drawPlayer(py,frame,invuln,lv){
   ctx.fillRect(rr(x+4),rr(by+3),3,5);
   ctx.fillRect(rr(x+5),rr(by+7),14,2);
 
-  // ほっぺ（ネス風かわいいアクセント）
-  ctx.fillStyle='rgba(220,100,80,0.28)';
-  ctx.fillRect(rr(x+4),rr(by-1),5,3);
-  ctx.fillRect(rr(x+15),rr(by-1),5,3);
+  // ほっぺ（帽子の下・目の横にそっと）
+  ctx.fillStyle='rgba(220,100,80,0.32)';
+  ctx.fillRect(rr(x+3),rr(by+0),5,3);
+  ctx.fillRect(rr(x+16),rr(by+0),5,3);
 
-  // 眉（太め・シンプル・親しみやすい）
-  ctx.fillStyle='#18100A';
-  ctx.fillRect(rr(x+6),rr(by-8),5,2);
-  ctx.fillRect(rr(x+15),rr(by-8),5,2);
-
-  // 目（ネス風・大きな黒点目）
+  // 目（パワプロ風・大きな黒丸・口なし）
   ctx.fillStyle=OL;
-  ctx.fillRect(rr(x+5),rr(by-6),6,6);
-  ctx.fillRect(rr(x+15),rr(by-6),6,6);
-  ctx.fillStyle='#FFFCE0';
-  ctx.fillRect(rr(x+6),rr(by-6),4,5);
-  ctx.fillRect(rr(x+16),rr(by-6),4,5);
+  ctx.fillRect(rr(x+3),rr(by-8),9,9);
+  ctx.fillRect(rr(x+14),rr(by-8),9,9);
   ctx.fillStyle='#0A0604';
-  ctx.fillRect(rr(x+6),rr(by-5),4,5);
-  ctx.fillRect(rr(x+16),rr(by-5),4,5);
+  ctx.fillRect(rr(x+4),rr(by-7),7,7);
+  ctx.fillRect(rr(x+15),rr(by-7),7,7);
   ctx.fillStyle='#FFFFFF';
-  ctx.fillRect(rr(x+6),rr(by-6),2,2);
-  ctx.fillRect(rr(x+16),rr(by-6),2,2);
-
-  // 口（シンプル笑顔・口角上がり）
-  ctx.fillStyle=OL;
-  ctx.fillRect(rr(x+8),rr(by+4),8,3);
-  ctx.fillStyle='#2A1008';
-  ctx.fillRect(rr(x+9),rr(by+4),6,1);
-  ctx.fillStyle=skS;
-  ctx.fillRect(rr(x+9),rr(by+5),6,1);
-  ctx.fillStyle='#18100A';
-  ctx.fillRect(rr(x+8),rr(by+5),1,1);
-  ctx.fillRect(rr(x+16),rr(by+5),1,1);
+  ctx.fillRect(rr(x+4),rr(by-7),3,2);
+  ctx.fillRect(rr(x+15),rr(by-7),3,2);
 
   // ══ 編み笠（深く被せ・眉のすぐ上） ══
   ctx.fillStyle=OL;
