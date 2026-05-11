@@ -33,6 +33,7 @@ html,body{
 
 // ── CANVAS SETUP ──────────────────────────────────────────
 const GW=360; let GH=640; let GY=540;
+const PX_BASE=72; // player x: 20% from left → 80% forward view
 const canvas=document.getElementById('game');
 const wrap=document.getElementById('wrap');
 const ctx=canvas.getContext('2d');
@@ -44,7 +45,7 @@ function resize(){
   if(vw<=vh){
     const scale=vw/GW;
     GH=Math.max(480, Math.round(vh/scale));
-    GY=Math.round(GH*0.845);
+    GY=Math.round(GH*0.82);
     canvas.width=GW; canvas.height=GH;
     ctx.imageSmoothingEnabled=false;
     canvas.style.width=vw+'px'; canvas.style.height=vh+'px';
@@ -75,9 +76,9 @@ function tryFullscreen(){
 }
 
 // ── CONSTANTS ─────────────────────────────────────────────
-const PX=90, G=0.90, JF=-17;
-const PSCALE=1.6;   // player visual scale
-const ESCALE=1.4;   // enemy visual scale
+const PX=72, G=0.90, JF=-17;
+const PSCALE=1.12;  // player visual scale (0.7x of previous 1.6)
+const ESCALE=1.0;   // enemy visual scale  (0.7x of previous 1.4)
 const BRIDGE_EVERY=800,BRIDGE_LEN=280;
 const BPLANK_W=40,BPLANK_PITCH=50,BSCROLL=6.0;
 const GOAL_DIST=6000;
@@ -640,7 +641,7 @@ function drawPlayerOnHorse(py,frame,invuln,lv){
 
   // Horse legs
   const fty=hby+12;
-  const fH=(n)=>Math.max(2,GY-fty-n+2);
+  const fH=(n)=>Math.max(2,Math.min(20,GY-fty-n+2));
   ctx.fillStyle=OL;
   ctx.fillRect(rr(x-6),rr(fty+bdy)-1,6,fH(bdy)+1);
   ctx.fillStyle='#6A2E0A';
@@ -1880,7 +1881,7 @@ let state='start';
 let dist,speed,py,vy,grounded,lives,invuln,invT,frame,entities,spawnD,stageIdx,msg,msgT;
 let bridgeActive,bridgeStartDist,bridgeHoles,bridgeDebris,bridgeWarnDone,bridgeDoneMsg;
 let items,lostItems,clearRank,npcPopT,npcPopMsg;
-let platforms,platSpawnD;
+let platforms,platSpawnD,platZigzag;
 let endT,endPlayerX,endFade,endMansionX; // ending cinematic
 
 function initGame(){
@@ -1892,7 +1893,7 @@ function initGame(){
   items=[true,false,false,false,false];
   lostItems=[false,false,false,false,false];
   clearRank=4; npcPopT=0; npcPopMsg='';
-  platforms=[]; platSpawnD=0;
+  platforms=[]; platSpawnD=0; platZigzag=0;
   endT=0; endPlayerX=PX; endFade=0; endMansionX=GW+300;
   state='playing';
 }
@@ -1955,19 +1956,24 @@ function aabb(ax,ay,aw,ah,bx,by,bw,bh){
 // ══════════════════════════════════════════════════════════
 function spawnPlatforms(){
   if(bridgeActive) return;
-  if(dist-platSpawnD<400+Math.random()*300) return;
+  if(dist-platSpawnD<200+Math.random()*150) return;
   platSpawnD=dist;
   const r=Math.random();
   let newPlats;
-  if(r<0.18)      newPlats=[{sub:'dawara',        x:GW+30,y:GY-32, w:36, h:32}];
-  else if(r<0.28) newPlats=[{sub:'dawara_crumble',x:GW+30,y:GY-60, w:36, h:60}];
-  else if(r<0.42) newPlats=[{sub:'dawara2',        x:GW+30,y:GY-60, w:36, h:60}];
-  else if(r<0.58) newPlats=[{sub:'hei',            x:GW+20,y:GY-68, w:100,h:68}];
-  else if(r<0.68) newPlats=[{sub:'hei_tall',       x:GW+20,y:GY-112,w:80, h:112}];
-  else if(r<0.78) newPlats=[{sub:'niguruma',       x:GW+20,y:GY-50, w:70, h:50}];
-  else if(r<0.88) newPlats=[
+  // Dawara zigzag: alternate left/right x and low/high y for hop-across feel
+  const zigEven=(platZigzag%2===0);
+  const zigX=zigEven?(GW+20):(GW+60);
+  const zigY=zigEven?(GY-32):(GY-80);
+  platZigzag++;
+  if(r<0.35)      newPlats=[{sub:'dawara',        x:zigX,y:zigY,    w:36, h:zigY===GY-32?32:80}];
+  else if(r<0.50) newPlats=[{sub:'dawara_crumble',x:GW+30,y:GY-60, w:36, h:60}];
+  else if(r<0.65) newPlats=[{sub:'dawara2',        x:GW+30,y:GY-60, w:36, h:60}];
+  else if(r<0.75) newPlats=[{sub:'hei',            x:GW+20,y:GY-68, w:100,h:68}];
+  else if(r<0.82) newPlats=[{sub:'hei_tall',       x:GW+20,y:GY-112,w:80, h:112}];
+  else if(r<0.90) newPlats=[{sub:'niguruma',       x:GW+20,y:GY-50, w:70, h:50}];
+  else if(r<0.95) newPlats=[
     {sub:'dawara', x:GW+20,y:GY-32,w:36,h:32},
-    {sub:'dawara2',x:GW+90,y:GY-60,w:36,h:60},
+    {sub:'dawara2',x:GW+90,y:GY-80,w:36,h:80},
   ];
   else newPlats=[
     {sub:'hei',     x:GW+20, y:GY-68, w:80, h:68},
@@ -2265,7 +2271,7 @@ function update(){
     if(e.x>GW+150||e.x<-150||e.y>GH+80) return false;
 
     if(!invuln){
-      const m=10, px_=PX+m, py_=py+m, pw=16, ph=30;
+      const m=8, px_=PX+m, py_=py+m, pw=14, ph=26;
       if(e.type==='obstacle'){
         let ex,ey,ew,eh;
         if(e.sub==='rock')             {ex=e.x+m;   ey=e.y+m;   ew=36-m*2; eh=16-m;}
@@ -2739,12 +2745,14 @@ function loop(){
           const ecx=rr(e.x+15);
           ctx.save();
           ctx.translate(ecx,GY); ctx.scale(ESCALE,ESCALE); ctx.translate(-ecx,-GY);
+          ctx.shadowColor='rgba(0,0,0,0.9)'; ctx.shadowBlur=3;
           const oPhase=(e.sub==='oihagi')?e.phase:(e.phase==='lunge'||e.phase==='thrust')?'leap':'grin';
           const oEY=e.phase==='charge'?e.y+5:e.y;
           drawOihagi(e.x,oEY,oPhase,frame);
           if(e.sub==='oihagi_sword')drawOihagiSword(e.x,e.y,e.phase==='thrust',frame);
           if(e.sub==='oihagi_rush') drawOihagiRush(e.x,e.y,frame);
           if(e.sub==='oihagi_lunge')drawOihagiLunge(e.x,e.y,e.phase,e.chargeT||0);
+          ctx.shadowBlur=0; ctx.shadowColor='transparent';
           ctx.restore();
         }
         else if(e.sub==='tanuki'){
@@ -2758,7 +2766,9 @@ function loop(){
       }
       ctx.save();
       ctx.translate(rr(PX+13),GY); ctx.scale(PSCALE,PSCALE); ctx.translate(-rr(PX+13),-GY);
+      ctx.shadowColor='rgba(0,0,0,0.9)'; ctx.shadowBlur=3;
       drawPlayer(py,frame,invuln,items.filter(Boolean).length-1);
+      ctx.shadowBlur=0; ctx.shadowColor='transparent';
       ctx.restore();
       drawNpcPopup();
       drawBridgeDebris();
@@ -2787,7 +2797,7 @@ function doAction(){
   if(state==='ending') return; // エンディング中は入力無効
   if(state==='clear'){state='start'; return;}
   if(state!=='playing'){initGame(); return;}
-  if(grounded){vy=(items&&items[4])?JF*1.6:JF; grounded=false; SFX.jump();}
+  if(grounded){vy=(items&&items[4])?JF*1.5:JF; grounded=false; SFX.jump();}
 }
 document.addEventListener('keydown',e=>{
   if(e.code==='Space'||e.code==='ArrowUp'){e.preventDefault(); doAction();}
