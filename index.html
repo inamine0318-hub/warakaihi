@@ -601,7 +601,7 @@ function drawWeather(weather,frame){
 }
 
 // ══════════════════════════════════════════════════════════
-// DRAW: PLAYER  ── 和風2〜3頭身旅人（MOTHER2×ゴエモン風）
+// DRAW: PLAYER  ── MOTHER2風・丸みかわいい2頭身旅人
 // ══════════════════════════════════════════════════════════
 function drawPlayerOnHorse(py,frame,invuln,lv){
   if(invuln&&Math.floor(frame/5)%2===0) return;
@@ -740,121 +740,115 @@ function drawPlayerOnHorse(py,frame,invuln,lv){
   ctx.fillStyle=skS;
   ctx.fillRect(rr(x+8),rr(py-1),7,2);
 
-  // Rider head
-  ctx.fillStyle=OL;
-  ctx.fillRect(rr(x+6),rr(py-16),12,2);
-  ctx.fillRect(rr(x+3),rr(py-14),18,2);
-  ctx.fillRect(rr(x+1),rr(py-12),20,1);
-  ctx.fillRect(rr(x+0),rr(py-11),22,21);
-  ctx.fillRect(rr(x+1),rr(py+10),20,1);
-  ctx.fillRect(rr(x+3),rr(py+11),16,2);
-  ctx.fillStyle=sk;
-  ctx.fillRect(rr(x+7),rr(py-16),10,2);
-  ctx.fillRect(rr(x+4),rr(py-14),16,2);
-  ctx.fillRect(rr(x+2),rr(py-12),18,1);
-  ctx.fillRect(rr(x+1),rr(py-11),20,21);
-  ctx.fillRect(rr(x+2),rr(py+10),18,1);
-  ctx.fillRect(rr(x+4),rr(py+11),14,2);
-
-  // Rider hair
-  ctx.fillStyle='#18100A';
-  ctx.fillRect(rr(x+4),rr(py-16),10,8);
-  ctx.fillRect(rr(x+1),rr(py-11),4,20);
-  ctx.fillStyle='#2C1A0E';
-  ctx.fillRect(rr(x+4),rr(py-16),3,5);
-  ctx.fillRect(rr(x+2),rr(py-10),2,14);
-  ctx.fillStyle='#18100A';
-  ctx.fillRect(rr(x+20),rr(py-10),2,12);
-  ctx.fillStyle='#2C1C0E';
-  ctx.fillRect(rr(x+20),rr(py-8),1,8);
-
   // Rider ponytail
   const sway=Math.round(Math.sin(frame*0.22)*2);
   ctx.fillStyle=OL;
-  ctx.fillRect(rr(x+0),rr(py+4),7,5);
+  ctx.fillRect(rr(x+0),rr(py+4),7,4);
+  ctx.fillRect(rr(x-5+sway),rr(py+7),8,3);
+  ctx.fillRect(rr(x-7+sway),rr(py+9),8,8);
+  ctx.fillRect(rr(x-6+sway),rr(py+16),6,5);
+  ctx.fillRect(rr(x-5+sway),rr(py+20),4,3);
   ctx.fillStyle='#18100A';
-  ctx.fillRect(rr(x+1),rr(py+5),5,3);
-  ctx.fillStyle='#382C0A';
-  ctx.fillRect(rr(x+2),rr(py+5),2,2);
-  ctx.fillStyle=OL;
-  ctx.fillRect(rr(x-5+sway),rr(py+7),8,4);
-  ctx.fillRect(rr(x-6+sway),rr(py+10),8,9);
-  ctx.fillRect(rr(x-5+sway),rr(py+18),6,4);
-  ctx.fillStyle='#18100A';
-  ctx.fillRect(rr(x-4+sway),rr(py+7),6,3);
-  ctx.fillRect(rr(x-5+sway),rr(py+10),6,8);
-  ctx.fillRect(rr(x-4+sway),rr(py+18),4,3);
+  ctx.fillRect(rr(x+1),rr(py+5),5,2);
+  ctx.fillRect(rr(x-4+sway),rr(py+7),6,2);
+  ctx.fillRect(rr(x-6+sway),rr(py+9),6,7);
+  ctx.fillRect(rr(x-5+sway),rr(py+16),4,4);
+  ctx.fillRect(rr(x-4+sway),rr(py+20),2,2);
   ctx.fillStyle='#2C1A0E';
-  ctx.fillRect(rr(x-4+sway),rr(py+11),2,6);
+  ctx.fillRect(rr(x-5+sway),rr(py+10),2,5);
+
+  // Rider head (round, cute – same style as drawPlayer)
+  ctx.fillStyle=OL;
+  ctx.fillRect(rr(x+5),rr(py-17),14,2);
+  ctx.fillRect(rr(x+2),rr(py-15),20,2);
+  ctx.fillRect(rr(x+0),rr(py-13),24,22);
+  ctx.fillRect(rr(x+2),rr(py+9),20,1);
+  ctx.fillRect(rr(x+5),rr(py+10),14,1);
+  ctx.fillStyle=sk;
+  ctx.fillRect(rr(x+6),rr(py-17),12,2);
+  ctx.fillRect(rr(x+3),rr(py-15),18,2);
+  ctx.fillRect(rr(x+1),rr(py-13),22,22);
+  ctx.fillRect(rr(x+3),rr(py+9),18,1);
+  ctx.fillRect(rr(x+6),rr(py+10),12,1);
+
+  // Rider hair
+  ctx.fillStyle='#18100A';
+  ctx.fillRect(rr(x+4),rr(py-17),6,5);
+  ctx.fillRect(rr(x+1),rr(py-13),3,23);
+  ctx.fillStyle='#2C1A0E';
+  ctx.fillRect(rr(x+2),rr(py-11),2,17);
+  ctx.fillStyle='#18100A';
+  ctx.fillRect(rr(x+22),rr(py-11),2,14);
 
   // Rider ear
   ctx.fillStyle=OL;
-  ctx.fillRect(rr(x+0)-1,rr(py-2)-1,4,8);
+  ctx.fillRect(rr(x+0)-1,rr(py-4)-1,4,8);
   ctx.fillStyle='#CC9048';
-  ctx.fillRect(rr(x+0),rr(py-2),3,7);
+  ctx.fillRect(rr(x+0),rr(py-4),3,7);
   ctx.fillStyle=skS;
-  ctx.fillRect(rr(x+1),rr(py+0),1,4);
+  ctx.fillRect(rr(x+1),rr(py-2),1,4);
 
-  // Rider face shadow
+  // Rider face shadow + cheeks
   ctx.fillStyle=skS;
-  ctx.fillRect(rr(x+4),rr(py+5),3,5);
-  ctx.fillRect(rr(x+5),rr(py+9),14,2);
+  ctx.fillRect(rr(x+4),rr(py+3),3,5);
+  ctx.fillRect(rr(x+5),rr(py+7),14,2);
+  ctx.fillStyle='rgba(220,100,80,0.28)';
+  ctx.fillRect(rr(x+4),rr(py-1),5,3);
+  ctx.fillRect(rr(x+15),rr(py-1),5,3);
 
-  // Rider brows
-  ctx.fillStyle=OL;
-  ctx.fillRect(rr(x+6),rr(py-6),5,2);
-  ctx.fillRect(rr(x+14),rr(py-6),5,2);
+  // Rider brows (friendly, simple)
   ctx.fillStyle='#18100A';
-  ctx.fillRect(rr(x+7),rr(py-6),4,1);
-  ctx.fillRect(rr(x+14),rr(py-6),4,1);
-  ctx.fillRect(rr(x+10),rr(py-5),2,1);
-  ctx.fillRect(rr(x+14),rr(py-5),2,1);
+  ctx.fillRect(rr(x+6),rr(py-8),5,2);
+  ctx.fillRect(rr(x+15),rr(py-8),5,2);
 
-  // Rider eyes
+  // Rider eyes (big dot eyes)
   ctx.fillStyle=OL;
-  ctx.fillRect(rr(x+6),rr(py-3),5,5);
-  ctx.fillRect(rr(x+14),rr(py-3),5,5);
+  ctx.fillRect(rr(x+5),rr(py-6),6,6);
+  ctx.fillRect(rr(x+15),rr(py-6),6,6);
   ctx.fillStyle='#FFFCE0';
-  ctx.fillRect(rr(x+7),rr(py-3),3,4);
-  ctx.fillRect(rr(x+15),rr(py-3),3,4);
+  ctx.fillRect(rr(x+6),rr(py-6),4,5);
+  ctx.fillRect(rr(x+16),rr(py-6),4,5);
   ctx.fillStyle='#0A0604';
-  ctx.fillRect(rr(x+7),rr(py-1),3,3);
-  ctx.fillRect(rr(x+15),rr(py-1),3,3);
+  ctx.fillRect(rr(x+6),rr(py-5),4,5);
+  ctx.fillRect(rr(x+16),rr(py-5),4,5);
   ctx.fillStyle='#FFFFFF';
-  ctx.fillRect(rr(x+7),rr(py-3),1,1);
-  ctx.fillRect(rr(x+15),rr(py-3),1,1);
+  ctx.fillRect(rr(x+6),rr(py-6),2,2);
+  ctx.fillRect(rr(x+16),rr(py-6),2,2);
 
-  // Rider mouth
+  // Rider mouth (smile)
   ctx.fillStyle=OL;
-  ctx.fillRect(rr(x+8),rr(py+4),8,2);
+  ctx.fillRect(rr(x+8),rr(py+4),8,3);
   ctx.fillStyle='#2A1008';
   ctx.fillRect(rr(x+9),rr(py+4),6,1);
   ctx.fillStyle=skS;
   ctx.fillRect(rr(x+9),rr(py+5),6,1);
+  ctx.fillStyle='#18100A';
+  ctx.fillRect(rr(x+8),rr(py+5),1,1);
+  ctx.fillRect(rr(x+16),rr(py+5),1,1);
 
-  // Hat (amigasa)
+  // Hat (amigasa, same as drawPlayer)
   ctx.fillStyle=OL;
-  ctx.fillRect(rr(x-5),rr(py-8),32,3);
-  ctx.fillRect(rr(x-1),rr(py-12),24,6);
-  ctx.fillRect(rr(x+2),rr(py-16),18,6);
-  ctx.fillRect(rr(x+5),rr(py-20),12,6);
-  ctx.fillRect(rr(x+8),rr(py-23),6,4);
+  ctx.fillRect(rr(x-6),rr(py-8),36,3);
+  ctx.fillRect(rr(x-1),rr(py-12),26,6);
+  ctx.fillRect(rr(x+2),rr(py-17),20,7);
+  ctx.fillRect(rr(x+5),rr(py-22),14,7);
+  ctx.fillRect(rr(x+8),rr(py-26),8,6);
   ctx.fillStyle='#C8A828';
-  ctx.fillRect(rr(x-4),rr(py-8),30,2);
+  ctx.fillRect(rr(x-5),rr(py-8),34,2);
   ctx.fillStyle='#A88018';
-  ctx.fillRect(rr(x-4),rr(py-7),30,1);
+  ctx.fillRect(rr(x-5),rr(py-7),34,1);
   ctx.fillStyle='#D8B830';
-  ctx.fillRect(rr(x+0),rr(py-12),22,5);
+  ctx.fillRect(rr(x+0),rr(py-12),24,5);
   ctx.fillStyle='#C8A820';
-  ctx.fillRect(rr(x+3),rr(py-16),16,5);
+  ctx.fillRect(rr(x+3),rr(py-17),18,6);
   ctx.fillStyle='#B8981A';
-  ctx.fillRect(rr(x+6),rr(py-20),10,5);
+  ctx.fillRect(rr(x+6),rr(py-22),12,6);
   ctx.fillStyle='#A88018';
-  ctx.fillRect(rr(x+9),rr(py-23),4,3);
+  ctx.fillRect(rr(x+9),rr(py-26),6,5);
   ctx.fillStyle='#906010';
-  for(let i=0;i<4;i++) ctx.fillRect(rr(x+0+i*6),rr(py-12),1,5);
-  for(let i=0;i<3;i++) ctx.fillRect(rr(x+3+i*6),rr(py-16),1,5);
-  for(let i=0;i<2;i++) ctx.fillRect(rr(x+6+i*6),rr(py-20),1,5);
+  for(let i=0;i<5;i++) ctx.fillRect(rr(x+i*5),rr(py-12),1,5);
+  for(let i=0;i<4;i++) ctx.fillRect(rr(x+3+i*5),rr(py-17),1,6);
+  for(let i=0;i<3;i++) ctx.fillRect(rr(x+6+i*5),rr(py-22),1,6);
 
   if(lv>0) drawItemIcon(rr(x+20),rr(py+6),lv,0.52);
 }
@@ -863,15 +857,16 @@ function drawPlayer(py,frame,invuln,lv){
   if(items&&items[4]){drawPlayerOnHorse(py,frame,invuln,lv);return;}
   if(invuln&&Math.floor(frame/5)%2===0) return;
   const x=PX;
-  // 4フレーム走りアニメ: [前足X,前足Y,後足X,後足Y,ボブ,前腕Y,後腕Y]
-  // [flx,fly, blx,bly, bob, fay, bay]  fay/bay=前腕Y位置（前構えポンプ）
+  const isJump=!grounded;
+  // 走りアニメ: 短足ぷかぷか [flx,fly, blx,bly, bob, fay,bay]
   const RF=[
-    [ 5, 0,-4, 1,  0, -4,-3],
-    [ 2, 3,-1, 2,  2, -3,-4],
-    [-4, 0, 5,-1,  0, -4,-3],
-    [ 0,-1, 0,-1, -1, -3,-4],
+    [ 4, 0,-3, 2,  0, -3,-2],
+    [ 2, 4,-1, 0,  2, -2,-3],
+    [-3, 0, 4,-2,  0, -3,-2],
+    [-1, 0, 2, 3,  2, -2,-3],
   ];
-  const [flx,fly,blx,bly,bob,fay,bay]=RF[Math.floor(frame/7)%4];
+  const fr=Math.floor(frame/7)%4;
+  const [flx,fly,blx,bly,bob,fay,bay]=isJump?[2,-5,-2,-5,0,-4,-4]:RF[fr];
   const by=py+bob;
   const OL='#080402';
   const cc=lv>=4?'#6A0C0C':'#7A4818';
@@ -882,211 +877,205 @@ function drawPlayer(py,frame,invuln,lv){
 
   // 地面影
   ctx.fillStyle='rgba(0,0,0,0.22)';
-  ctx.fillRect(rr(x+1),GY+1,22,2);
-  ctx.fillRect(rr(x-1),GY+2,26,1);
+  ctx.fillRect(rr(x+0),GY+1,26,2);
+  ctx.fillRect(rr(x-2),GY+2,30,1);
 
-  // ══ 後足（袴） ══
-  ctx.fillStyle=OL; ctx.fillRect(rr(x+3+blx)-1,rr(by+24+bly)-1,9,17);
-  ctx.fillStyle=cc;  ctx.fillRect(rr(x+3+blx),rr(by+24+bly),7,16);
-  ctx.fillStyle=cs;  ctx.fillRect(rr(x+5+blx),rr(by+32+bly),3,8);
-  // 草履（後）
-  ctx.fillStyle=OL;  ctx.fillRect(rr(x+0+blx)-1,rr(by+40+bly)-1,13,5);
-  ctx.fillStyle='#A08020'; ctx.fillRect(rr(x+0+blx),rr(by+40+bly),11,4);
-  ctx.fillStyle='#C0A030'; ctx.fillRect(rr(x+1+blx),rr(by+40+bly),9,2);
-  ctx.fillStyle='#806010'; ctx.fillRect(rr(x+4+blx),rr(by+40+bly),2,4);
-
-  // ══ ポニーテール（後ろで束ねた髪・揺れる） ══
-  const sway=Math.round(Math.sin(frame*0.22)*2);
-  ctx.fillStyle=OL;  ctx.fillRect(rr(x+0),rr(by+4),7,5);
-  ctx.fillStyle='#18100A'; ctx.fillRect(rr(x+1),rr(by+5),5,3);
-  ctx.fillStyle='#382C0A'; ctx.fillRect(rr(x+2),rr(by+5),2,2);
+  // ══ ポニーテール（ぴょこぴょこ揺れ） ══
+  const sway=Math.round(Math.sin(frame*0.22)*(isJump?4:2));
   ctx.fillStyle=OL;
-  ctx.fillRect(rr(x-5+sway),rr(by+7),8,4);
-  ctx.fillRect(rr(x-6+sway),rr(by+10),8,9);
-  ctx.fillRect(rr(x-5+sway),rr(by+18),6,4);
+  ctx.fillRect(rr(x+0),rr(by+4),7,4);
+  ctx.fillRect(rr(x-5+sway),rr(by+7),8,3);
+  ctx.fillRect(rr(x-7+sway),rr(by+9),8,8);
+  ctx.fillRect(rr(x-6+sway),rr(by+16),6,5);
+  ctx.fillRect(rr(x-5+sway),rr(by+20),4,3);
   ctx.fillStyle='#18100A';
-  ctx.fillRect(rr(x-4+sway),rr(by+7),6,3);
-  ctx.fillRect(rr(x-5+sway),rr(by+10),6,8);
-  ctx.fillRect(rr(x-4+sway),rr(by+18),4,3);
+  ctx.fillRect(rr(x+1),rr(by+5),5,2);
+  ctx.fillRect(rr(x-4+sway),rr(by+7),6,2);
+  ctx.fillRect(rr(x-6+sway),rr(by+9),6,7);
+  ctx.fillRect(rr(x-5+sway),rr(by+16),4,4);
+  ctx.fillRect(rr(x-4+sway),rr(by+20),2,2);
   ctx.fillStyle='#2C1A0E';
-  ctx.fillRect(rr(x-4+sway),rr(by+11),2,6);
+  ctx.fillRect(rr(x-5+sway),rr(by+10),2,5);
 
   // ══ 藁背負い籠 ══
-  ctx.fillStyle=OL;  ctx.fillRect(rr(x-2),rr(by+12),12,16);
-  ctx.fillStyle='#5A3408'; ctx.fillRect(rr(x-1),rr(by+13),10,14);
+  ctx.fillStyle=OL; ctx.fillRect(rr(x-1),rr(by+12),12,14);
+  ctx.fillStyle='#5A3408'; ctx.fillRect(rr(x+0),rr(by+13),10,12);
   ctx.fillStyle='#8A5118';
-  ctx.fillRect(rr(x-1),rr(by+13),10,3);
-  ctx.fillRect(rr(x-1),rr(by+17),10,3);
-  ctx.fillRect(rr(x-1),rr(by+21),10,3);
+  ctx.fillRect(rr(x+0),rr(by+13),10,3);
+  ctx.fillRect(rr(x+0),rr(by+17),10,3);
+  ctx.fillRect(rr(x+0),rr(by+21),10,3);
   ctx.fillStyle='#6A3C0C';
-  ctx.fillRect(rr(x-1),rr(by+13),2,14);
-  ctx.fillRect(rr(x+3),rr(by+13),2,14);
-  ctx.fillRect(rr(x+7),rr(by+13),2,14);
-  ctx.fillStyle=OL;  ctx.fillRect(rr(x-2),rr(by+10),12,4);
-  ctx.fillStyle='#A87028'; ctx.fillRect(rr(x-1),rr(by+11),10,3);
-  ctx.fillStyle='#C8922A'; ctx.fillRect(rr(x-1),rr(by+11),10,1);
-  ctx.fillStyle=OL;  ctx.fillRect(rr(x+2),rr(by+8),4,4);
-  ctx.fillStyle='#8A5018'; ctx.fillRect(rr(x+3),rr(by+8),2,4);
-  // 一本の藁
-  ctx.fillStyle=OL;  ctx.fillRect(rr(x+3),rr(by+2),4,10);
-  ctx.fillStyle='#E8C040'; ctx.fillRect(rr(x+4),rr(by+2),2,2);
-  ctx.fillStyle='#F0D030'; ctx.fillRect(rr(x+4),rr(by+3),2,4);
-  ctx.fillStyle='#C8A820'; ctx.fillRect(rr(x+4),rr(by+6),2,5);
-  ctx.fillStyle='#806010'; ctx.fillRect(rr(x+4),rr(by+10),2,2);
+  ctx.fillRect(rr(x+0),rr(by+13),2,12);
+  ctx.fillRect(rr(x+4),rr(by+13),2,12);
+  ctx.fillRect(rr(x+8),rr(by+13),2,12);
+  ctx.fillStyle=OL; ctx.fillRect(rr(x-1),rr(by+10),12,4);
+  ctx.fillStyle='#A87028'; ctx.fillRect(rr(x+0),rr(by+11),10,3);
+  ctx.fillStyle='#C8922A'; ctx.fillRect(rr(x+0),rr(by+11),10,1);
+  ctx.fillStyle=OL; ctx.fillRect(rr(x+3),rr(by+8),4,4);
+  ctx.fillStyle='#8A5018'; ctx.fillRect(rr(x+4),rr(by+8),2,4);
+  ctx.fillStyle=OL; ctx.fillRect(rr(x+4),rr(by+2),4,9);
+  ctx.fillStyle='#E8C040'; ctx.fillRect(rr(x+5),rr(by+2),2,2);
+  ctx.fillStyle='#F0D030'; ctx.fillRect(rr(x+5),rr(by+3),2,4);
+  ctx.fillStyle='#C8A820'; ctx.fillRect(rr(x+5),rr(by+6),2,4);
+  ctx.fillStyle='#806010'; ctx.fillRect(rr(x+5),rr(by+10),2,2);
 
-  // ══ 胴体（短い着物・膝上） ══
-  ctx.fillStyle=OL; ctx.fillRect(rr(x+3)-1,rr(by+12)-1,16,13);
-  ctx.fillStyle=cc;  ctx.fillRect(rr(x+3),rr(by+12),14,12);
-  ctx.fillStyle=ch;  ctx.fillRect(rr(x+3),rr(by+12),4,12);
-  ctx.fillStyle=cs;  ctx.fillRect(rr(x+14),rr(by+12),3,12);
+  // ══ 後足（短くてぷっくり・9px幅） ══
+  ctx.fillStyle=OL; ctx.fillRect(rr(x+3+blx)-1,rr(by+23+bly)-1,10,14);
+  ctx.fillStyle=cc;  ctx.fillRect(rr(x+3+blx),rr(by+23+bly),8,13);
+  ctx.fillStyle=cs;  ctx.fillRect(rr(x+6+blx),rr(by+29+bly),3,7);
+  ctx.fillStyle=OL;  ctx.fillRect(rr(x+1+blx)-1,rr(by+36+bly)-1,12,4);
+  ctx.fillStyle='#A08020'; ctx.fillRect(rr(x+1+blx),rr(by+36+bly),10,3);
+  ctx.fillStyle='#C0A030'; ctx.fillRect(rr(x+2+blx),rr(by+36+bly),8,2);
+  ctx.fillStyle='#806010'; ctx.fillRect(rr(x+5+blx),rr(by+36+bly),2,3);
+
+  // ══ 胴体（丸みのある着物・ぷっくり） ══
+  ctx.fillStyle=OL; ctx.fillRect(rr(x+2)-1,rr(by+11)-1,19,13);
+  ctx.fillStyle=cc;  ctx.fillRect(rr(x+2),rr(by+11),17,12);
+  ctx.fillStyle=ch;  ctx.fillRect(rr(x+2),rr(by+11),5,12);
+  ctx.fillStyle=cs;  ctx.fillRect(rr(x+15),rr(by+11),4,12);
   if(lv<4){
     ctx.fillStyle='#3A2408';
-    ctx.fillRect(rr(x+8),rr(by+14),4,4);
+    ctx.fillRect(rr(x+8),rr(by+13),5,4);
+    ctx.fillRect(rr(x+13),rr(by+17),4,4);
     ctx.fillStyle='#5C3A10';
-    ctx.fillRect(rr(x+8),rr(by+14),4,1); ctx.fillRect(rr(x+8),rr(by+14),1,4);
+    ctx.fillRect(rr(x+8),rr(by+13),5,1); ctx.fillRect(rr(x+8),rr(by+13),1,4);
+    ctx.fillRect(rr(x+13),rr(by+17),4,1); ctx.fillRect(rr(x+13),rr(by+17),1,4);
   }
-  ctx.fillStyle='#D0CC98'; ctx.fillRect(rr(x+11),rr(by+11),5,7);
-  ctx.fillStyle=OL; ctx.fillRect(rr(x+10),rr(by+11),2,7);
-  ctx.fillStyle=OL; ctx.fillRect(rr(x+3)-1,rr(by+21)-1,16,4);
-  ctx.fillStyle='#181008'; ctx.fillRect(rr(x+3),rr(by+21),14,3);
-  ctx.fillStyle='#28200A'; ctx.fillRect(rr(x+3),rr(by+21),14,1);
+  ctx.fillStyle='#D0CC98'; ctx.fillRect(rr(x+12),rr(by+10),5,7);
+  ctx.fillStyle=OL; ctx.fillRect(rr(x+11),rr(by+10),2,7);
+  ctx.fillStyle=OL; ctx.fillRect(rr(x+2)-1,rr(by+22)-1,19,4);
+  ctx.fillStyle='#181008'; ctx.fillRect(rr(x+2),rr(by+22),17,3);
+  ctx.fillStyle='#28200A'; ctx.fillRect(rr(x+2),rr(by+22),17,1);
 
-  // ══ 後腕（前構え） ══
-  ctx.fillStyle=OL; ctx.fillRect(rr(x+3),rr(by+13),6,7);
-  ctx.fillStyle=cc;  ctx.fillRect(rr(x+4),rr(by+13),4,6);
-  ctx.fillStyle=ch;  ctx.fillRect(rr(x+4),rr(by+13),1,6);
-  ctx.fillStyle=OL; ctx.fillRect(rr(x+6),rr(by+17+bay),11,5);
-  ctx.fillStyle=cc;  ctx.fillRect(rr(x+7),rr(by+18+bay),9,3);
-  ctx.fillStyle=ch;  ctx.fillRect(rr(x+7),rr(by+18+bay),2,3);
-  ctx.fillStyle=OL; ctx.fillRect(rr(x+14),rr(by+16+bay),5,6);
-  ctx.fillStyle=sk;  ctx.fillRect(rr(x+15),rr(by+17+bay),3,4);
-  ctx.fillStyle=skS; ctx.fillRect(rr(x+15),rr(by+18+bay),3,2);
+  // ══ 後腕（短くてぷっくり） ══
+  ctx.fillStyle=OL; ctx.fillRect(rr(x+3),rr(by+13),6,6);
+  ctx.fillStyle=cc;  ctx.fillRect(rr(x+4),rr(by+14),4,4);
+  ctx.fillStyle=OL; ctx.fillRect(rr(x+6),rr(by+17+bay),10,5);
+  ctx.fillStyle=cc;  ctx.fillRect(rr(x+7),rr(by+18+bay),8,3);
+  ctx.fillStyle=OL; ctx.fillRect(rr(x+13),rr(by+16+bay),5,6);
+  ctx.fillStyle=sk;  ctx.fillRect(rr(x+14),rr(by+17+bay),3,4);
+  ctx.fillStyle=skS; ctx.fillRect(rr(x+14),rr(by+19+bay),3,2);
 
-  // ══ 前足（袴） ══
-  ctx.fillStyle=OL; ctx.fillRect(rr(x+10+flx)-1,rr(by+24+fly)-1,9,17);
-  ctx.fillStyle=cc;  ctx.fillRect(rr(x+10+flx),rr(by+24+fly),7,16);
-  ctx.fillStyle=cs;  ctx.fillRect(rr(x+12+flx),rr(by+32+fly),3,8);
-  // 草履（前）
-  ctx.fillStyle=OL;  ctx.fillRect(rr(x+7+flx)-1,rr(by+40+fly)-1,13,5);
-  ctx.fillStyle='#C0A030'; ctx.fillRect(rr(x+7+flx),rr(by+40+fly),11,4);
-  ctx.fillStyle='#D8BC40'; ctx.fillRect(rr(x+8+flx),rr(by+40+fly),9,2);
-  ctx.fillStyle='#806010'; ctx.fillRect(rr(x+11+flx),rr(by+40+fly),2,4);
+  // ══ 前足（短くてぷっくり） ══
+  ctx.fillStyle=OL; ctx.fillRect(rr(x+11+flx)-1,rr(by+23+fly)-1,10,14);
+  ctx.fillStyle=cc;  ctx.fillRect(rr(x+11+flx),rr(by+23+fly),8,13);
+  ctx.fillStyle=cs;  ctx.fillRect(rr(x+13+flx),rr(by+29+fly),3,7);
+  ctx.fillStyle=OL;  ctx.fillRect(rr(x+9+flx)-1,rr(by+36+fly)-1,12,4);
+  ctx.fillStyle='#C0A030'; ctx.fillRect(rr(x+9+flx),rr(by+36+fly),10,3);
+  ctx.fillStyle='#D8BC40'; ctx.fillRect(rr(x+10+flx),rr(by+36+fly),8,2);
+  ctx.fillStyle='#806010'; ctx.fillRect(rr(x+13+flx),rr(by+36+fly),2,3);
 
-  // ══ 前腕（前構え・より前に） ══
-  ctx.fillStyle=OL; ctx.fillRect(rr(x+13),rr(by+12),6,8);
-  ctx.fillStyle=cc;  ctx.fillRect(rr(x+14),rr(by+12),4,7);
-  ctx.fillStyle=ch;  ctx.fillRect(rr(x+14),rr(by+12),1,7);
-  ctx.fillStyle=OL; ctx.fillRect(rr(x+16),rr(by+16+fay),12,5);
-  ctx.fillStyle=cc;  ctx.fillRect(rr(x+17),rr(by+17+fay),10,3);
-  ctx.fillStyle=ch;  ctx.fillRect(rr(x+17),rr(by+17+fay),2,3);
-  ctx.fillStyle=OL; ctx.fillRect(rr(x+24),rr(by+15+fay),5,6);
-  ctx.fillStyle=sk;  ctx.fillRect(rr(x+25),rr(by+16+fay),3,4);
-  ctx.fillStyle=skS; ctx.fillRect(rr(x+25),rr(by+17+fay),3,2);
+  // ══ 前腕（短くて前構え） ══
+  ctx.fillStyle=OL; ctx.fillRect(rr(x+13),rr(by+12),6,6);
+  ctx.fillStyle=cc;  ctx.fillRect(rr(x+14),rr(by+13),4,4);
+  ctx.fillStyle=OL; ctx.fillRect(rr(x+16),rr(by+16+fay),11,5);
+  ctx.fillStyle=cc;  ctx.fillRect(rr(x+17),rr(by+17+fay),9,3);
+  ctx.fillStyle=OL; ctx.fillRect(rr(x+23),rr(by+15+fay),5,6);
+  ctx.fillStyle=sk;  ctx.fillRect(rr(x+24),rr(by+16+fay),3,4);
+  ctx.fillStyle=skS; ctx.fillRect(rr(x+24),rr(by+18+fay),3,2);
 
   // ══ 首 ══
   ctx.fillStyle=OL; ctx.fillRect(rr(x+8)-1,rr(by+9)-1,8,5);
   ctx.fillStyle=sk;  ctx.fillRect(rr(x+8),rr(by+9),7,4);
   ctx.fillStyle=skS; ctx.fillRect(rr(x+8),rr(by+11),7,2);
 
-  // ════════════════════════════════════════════
-  // 頭部（大きな丸頭・ネス風2.5頭身）
-  // ════════════════════════════════════════════
-
-  // 輪郭（ピクセル楕円・OL）
+  // ════════════════════════════════════════════════════════
+  // 頭部（大きな丸頭・ネス風2頭身・ぷっくり）
+  // ════════════════════════════════════════════════════════
+  // ピクセル楕円 OL（24px幅 × 20px高さ）
   ctx.fillStyle=OL;
-  ctx.fillRect(rr(x+6),rr(by-16),12,2);
-  ctx.fillRect(rr(x+3),rr(by-14),18,2);
-  ctx.fillRect(rr(x+1),rr(by-12),20,1);
-  ctx.fillRect(rr(x+0),rr(by-11),22,21);
-  ctx.fillRect(rr(x+1),rr(by+10),20,1);
-  ctx.fillRect(rr(x+3),rr(by+11),16,2);
-  // 肌色（内側）
+  ctx.fillRect(rr(x+5),rr(by-17),14,2);
+  ctx.fillRect(rr(x+2),rr(by-15),20,2);
+  ctx.fillRect(rr(x+0),rr(by-13),24,22);
+  ctx.fillRect(rr(x+2),rr(by+9),20,1);
+  ctx.fillRect(rr(x+5),rr(by+10),14,1);
+  // 肌fill（1px内側）
   ctx.fillStyle=sk;
-  ctx.fillRect(rr(x+7),rr(by-16),10,2);
-  ctx.fillRect(rr(x+4),rr(by-14),16,2);
-  ctx.fillRect(rr(x+2),rr(by-12),18,1);
-  ctx.fillRect(rr(x+1),rr(by-11),20,21);
-  ctx.fillRect(rr(x+2),rr(by+10),18,1);
-  ctx.fillRect(rr(x+4),rr(by+11),14,2);
+  ctx.fillRect(rr(x+6),rr(by-17),12,2);
+  ctx.fillRect(rr(x+3),rr(by-15),18,2);
+  ctx.fillRect(rr(x+1),rr(by-13),22,22);
+  ctx.fillRect(rr(x+3),rr(by+9),18,1);
+  ctx.fillRect(rr(x+6),rr(by+10),12,1);
 
-  // 総髪（頭を覆う黒髪）
+  // 黒髪（左サイド・前髪チラリ・右後ろ）
   ctx.fillStyle='#18100A';
-  ctx.fillRect(rr(x+4),rr(by-16),10,8);
-  ctx.fillRect(rr(x+1),rr(by-11),4,20);
+  ctx.fillRect(rr(x+4),rr(by-17),6,5);
+  ctx.fillRect(rr(x+1),rr(by-13),3,23);
   ctx.fillStyle='#2C1A0E';
-  ctx.fillRect(rr(x+4),rr(by-16),3,5);
-  ctx.fillRect(rr(x+2),rr(by-10),2,14);
+  ctx.fillRect(rr(x+2),rr(by-11),2,17);
+  ctx.fillStyle='#18100A';
+  ctx.fillRect(rr(x+22),rr(by-11),2,14);
 
   // 耳
-  ctx.fillStyle=OL;  ctx.fillRect(rr(x+0)-1,rr(by-2)-1,4,8);
-  ctx.fillStyle='#CC9048'; ctx.fillRect(rr(x+0),rr(by-2),3,7);
-  ctx.fillStyle=skS; ctx.fillRect(rr(x+1),rr(by+0),1,4);
+  ctx.fillStyle=OL;  ctx.fillRect(rr(x+0)-1,rr(by-4)-1,4,8);
+  ctx.fillStyle='#CC9048'; ctx.fillRect(rr(x+0),rr(by-4),3,7);
+  ctx.fillStyle=skS; ctx.fillRect(rr(x+1),rr(by-2),1,4);
 
-  // 後ろ髪（耳の後ろ）
-  ctx.fillStyle='#18100A';
-  ctx.fillRect(rr(x+20),rr(by-10),2,12);
-  ctx.fillStyle='#2C1C0E';
-  ctx.fillRect(rr(x+20),rr(by-8),1,8);
-
-  // 顔の影
+  // 顔影（左下ほっぺのへこみ）
   ctx.fillStyle=skS;
-  ctx.fillRect(rr(x+4),rr(by+5),3,5);
-  ctx.fillRect(rr(x+5),rr(by+9),14,2);
+  ctx.fillRect(rr(x+4),rr(by+3),3,5);
+  ctx.fillRect(rr(x+5),rr(by+7),14,2);
 
-  // 眉（険しい決意）
-  ctx.fillStyle=OL;
-  ctx.fillRect(rr(x+6),rr(by-6),5,2);
-  ctx.fillRect(rr(x+14),rr(by-6),5,2);
+  // ほっぺ（ネス風かわいいアクセント）
+  ctx.fillStyle='rgba(220,100,80,0.28)';
+  ctx.fillRect(rr(x+4),rr(by-1),5,3);
+  ctx.fillRect(rr(x+15),rr(by-1),5,3);
+
+  // 眉（太め・シンプル・親しみやすい）
   ctx.fillStyle='#18100A';
-  ctx.fillRect(rr(x+7),rr(by-6),4,1);
-  ctx.fillRect(rr(x+14),rr(by-6),4,1);
-  ctx.fillRect(rr(x+10),rr(by-5),2,1);
-  ctx.fillRect(rr(x+14),rr(by-5),2,1);
+  ctx.fillRect(rr(x+6),rr(by-8),5,2);
+  ctx.fillRect(rr(x+15),rr(by-8),5,2);
 
-  // 目（ネス風・点目）
+  // 目（ネス風・大きな黒点目）
   ctx.fillStyle=OL;
-  ctx.fillRect(rr(x+6),rr(by-3),5,5);
-  ctx.fillRect(rr(x+14),rr(by-3),5,5);
+  ctx.fillRect(rr(x+5),rr(by-6),6,6);
+  ctx.fillRect(rr(x+15),rr(by-6),6,6);
   ctx.fillStyle='#FFFCE0';
-  ctx.fillRect(rr(x+7),rr(by-3),3,4);
-  ctx.fillRect(rr(x+15),rr(by-3),3,4);
+  ctx.fillRect(rr(x+6),rr(by-6),4,5);
+  ctx.fillRect(rr(x+16),rr(by-6),4,5);
   ctx.fillStyle='#0A0604';
-  ctx.fillRect(rr(x+7),rr(by-1),3,3);
-  ctx.fillRect(rr(x+15),rr(by-1),3,3);
+  ctx.fillRect(rr(x+6),rr(by-5),4,5);
+  ctx.fillRect(rr(x+16),rr(by-5),4,5);
   ctx.fillStyle='#FFFFFF';
-  ctx.fillRect(rr(x+7),rr(by-3),1,1);
-  ctx.fillRect(rr(x+15),rr(by-3),1,1);
+  ctx.fillRect(rr(x+6),rr(by-6),2,2);
+  ctx.fillRect(rr(x+16),rr(by-6),2,2);
 
-  // 口（引き結んだ一文字・決意）
-  ctx.fillStyle=OL; ctx.fillRect(rr(x+8),rr(by+4),8,2);
-  ctx.fillStyle='#2A1008'; ctx.fillRect(rr(x+9),rr(by+4),6,1);
-  ctx.fillStyle=skS; ctx.fillRect(rr(x+9),rr(by+5),6,1);
-
-  // ══ 編み笠 ══
+  // 口（シンプル笑顔・口角上がり）
   ctx.fillStyle=OL;
-  ctx.fillRect(rr(x-5),rr(by-8),32,3);
-  ctx.fillRect(rr(x-1),rr(by-12),24,6);
-  ctx.fillRect(rr(x+2),rr(by-16),18,6);
-  ctx.fillRect(rr(x+5),rr(by-20),12,6);
-  ctx.fillRect(rr(x+8),rr(by-23),6,4);
-  ctx.fillStyle='#C8A828';
-  ctx.fillRect(rr(x-4),rr(by-8),30,2);
-  ctx.fillStyle='#A88018';
-  ctx.fillRect(rr(x-4),rr(by-7),30,1);
-  ctx.fillStyle='#D8B830';
-  ctx.fillRect(rr(x+0),rr(by-12),22,5);
-  ctx.fillStyle='#C8A820';
-  ctx.fillRect(rr(x+3),rr(by-16),16,5);
-  ctx.fillStyle='#B8981A';
-  ctx.fillRect(rr(x+6),rr(by-20),10,5);
-  ctx.fillStyle='#A88018';
-  ctx.fillRect(rr(x+9),rr(by-23),4,3);
-  ctx.fillStyle='#906010';
-  for(let i=0;i<4;i++) ctx.fillRect(rr(x+0+i*6),rr(by-12),1,5);
-  for(let i=0;i<3;i++) ctx.fillRect(rr(x+3+i*6),rr(by-16),1,5);
-  for(let i=0;i<2;i++) ctx.fillRect(rr(x+6+i*6),rr(by-20),1,5);
+  ctx.fillRect(rr(x+8),rr(by+4),8,3);
+  ctx.fillStyle='#2A1008';
+  ctx.fillRect(rr(x+9),rr(by+4),6,1);
+  ctx.fillStyle=skS;
+  ctx.fillRect(rr(x+9),rr(by+5),6,1);
+  ctx.fillStyle='#18100A';
+  ctx.fillRect(rr(x+8),rr(by+5),1,1);
+  ctx.fillRect(rr(x+16),rr(by+5),1,1);
 
-  if(lv>0) drawItemIcon(rr(x+18),rr(by+19),lv,0.52);
+  // ══ 編み笠（深く被せ・眉のすぐ上） ══
+  ctx.fillStyle=OL;
+  ctx.fillRect(rr(x-6),rr(by-8),36,3);
+  ctx.fillRect(rr(x-1),rr(by-12),26,6);
+  ctx.fillRect(rr(x+2),rr(by-17),20,7);
+  ctx.fillRect(rr(x+5),rr(by-22),14,7);
+  ctx.fillRect(rr(x+8),rr(by-26),8,6);
+  ctx.fillStyle='#C8A828';
+  ctx.fillRect(rr(x-5),rr(by-8),34,2);
+  ctx.fillStyle='#A88018';
+  ctx.fillRect(rr(x-5),rr(by-7),34,1);
+  ctx.fillStyle='#D8B830';
+  ctx.fillRect(rr(x+0),rr(by-12),24,5);
+  ctx.fillStyle='#C8A820';
+  ctx.fillRect(rr(x+3),rr(by-17),18,6);
+  ctx.fillStyle='#B8981A';
+  ctx.fillRect(rr(x+6),rr(by-22),12,6);
+  ctx.fillStyle='#A88018';
+  ctx.fillRect(rr(x+9),rr(by-26),6,5);
+  ctx.fillStyle='#906010';
+  for(let i=0;i<5;i++) ctx.fillRect(rr(x+i*5),rr(by-12),1,5);
+  for(let i=0;i<4;i++) ctx.fillRect(rr(x+3+i*5),rr(by-17),1,6);
+  for(let i=0;i<3;i++) ctx.fillRect(rr(x+6+i*5),rr(by-22),1,6);
+
+  if(lv>0) drawItemIcon(rr(x+19),rr(by+19),lv,0.52);
 }
 
 // ── Chain icon (shared: player sprite + slot UI) ───────────
