@@ -123,6 +123,7 @@ function beep(f,d,t='square',v=0.11){
 const SFX={
   jump:()=>beep(360,0.11,'square',0.09),
   get: ()=>{beep(620,0.09,'triangle',0.12);setTimeout(()=>beep(840,0.12,'triangle',0.12),75);},
+  heal:()=>{beep(520,0.10,'sine',0.10);setTimeout(()=>beep(660,0.10,'sine',0.12),80);setTimeout(()=>beep(880,0.14,'sine',0.10),160);},
   hit: ()=>beep(130,0.26,'sawtooth',0.16),
   over:()=>[360,300,240,190].forEach((f,i)=>setTimeout(()=>beep(f,0.17,'square',0.12),i*135)),
 };
@@ -599,303 +600,492 @@ function drawWeather(weather,frame){
 }
 
 // ══════════════════════════════════════════════════════════
-// DRAW: PLAYER  (side profile, faces right)
+// DRAW: PLAYER  ── 和風2〜3頭身旅人（MOTHER2×ゴエモン風）
 // ══════════════════════════════════════════════════════════
-// DRAW: PLAYER ── 江戸時代・貧しい村人（ちょんまげ、つぎはぎ着物、腰にわら）
-// 4フレーム走りアニメ / 輪郭線あり
-// ══════════════════════════════════════════════════════════
+function drawPlayerOnHorse(py,frame,invuln,lv){
+  if(invuln&&Math.floor(frame/5)%2===0) return;
+  const x=PX, OL='#080402';
+  const sk='#DEAA58', skS='#B88030';
+  const cc=lv>=4?'#6A0C0C':'#5A2E0A';
+  const cs=lv>=4?'#3A0404':'#3A1C04';
+  const ch=lv>=4?'#8A1010':'#8A5020';
+  const hf=Math.floor(frame/5)%4;
+  const HA=[[-2,2,0],[2,-2,-1],[-2,2,0],[2,-2,-1]];
+  const [fdy,bdy,hbob]=HA[hf];
+
+  // Shadow
+  ctx.fillStyle='rgba(0,0,0,0.25)';
+  ctx.fillRect(rr(x-10),GY+1,56,2);
+  ctx.fillRect(rr(x-12),GY+2,60,1);
+
+  // Horse body
+  const hby=py+22+hbob;
+  ctx.fillStyle=OL;
+  ctx.fillRect(rr(x-8),rr(hby),38,14);
+  ctx.fillStyle='#7A3A10';
+  ctx.fillRect(rr(x-7),rr(hby+1),36,12);
+  ctx.fillStyle='#9A5028';
+  ctx.fillRect(rr(x-7),rr(hby+1),36,4);
+  ctx.fillStyle='#5A2808';
+  ctx.fillRect(rr(x-7),rr(hby+8),36,4);
+
+  // Horse tail
+  const tsway=Math.round(Math.sin(frame*0.20)*2);
+  ctx.fillStyle=OL;
+  ctx.fillRect(rr(x-12+tsway),rr(hby+2),8,14);
+  ctx.fillStyle='#3A1A08';
+  ctx.fillRect(rr(x-11+tsway),rr(hby+3),6,12);
+  ctx.fillStyle='#5A2C0E';
+  ctx.fillRect(rr(x-11+tsway),rr(hby+4),2,8);
+
+  // Horse legs
+  const fty=hby+12;
+  const fH=(n)=>Math.max(2,GY-fty-n+2);
+  ctx.fillStyle=OL;
+  ctx.fillRect(rr(x-6),rr(fty+bdy)-1,6,fH(bdy)+1);
+  ctx.fillStyle='#6A2E0A';
+  ctx.fillRect(rr(x-5),rr(fty+bdy),4,fH(bdy)-1);
+  ctx.fillStyle=OL;
+  ctx.fillRect(rr(x+1),rr(fty+Math.round(bdy/2))-1,6,fH(Math.round(bdy/2))+1);
+  ctx.fillStyle='#6A2E0A';
+  ctx.fillRect(rr(x+2),rr(fty+Math.round(bdy/2)),4,fH(Math.round(bdy/2))-1);
+  ctx.fillStyle=OL;
+  ctx.fillRect(rr(x+14),rr(fty+fdy)-1,6,fH(fdy)+1);
+  ctx.fillStyle='#6A2E0A';
+  ctx.fillRect(rr(x+15),rr(fty+fdy),4,fH(fdy)-1);
+  ctx.fillStyle=OL;
+  ctx.fillRect(rr(x+20),rr(fty+Math.round(fdy/2))-1,6,fH(Math.round(fdy/2))+1);
+  ctx.fillStyle='#6A2E0A';
+  ctx.fillRect(rr(x+21),rr(fty+Math.round(fdy/2)),4,fH(Math.round(fdy/2))-1);
+  ctx.fillStyle='#1A1008';
+  ctx.fillRect(rr(x-6),GY-2,6,2);
+  ctx.fillRect(rr(x+1),GY-2,6,2);
+  ctx.fillRect(rr(x+14),GY-2,6,2);
+  ctx.fillRect(rr(x+20),GY-2,6,2);
+
+  // Horse neck
+  ctx.fillStyle=OL;
+  ctx.fillRect(rr(x+22),rr(py+6+hbob),10,18);
+  ctx.fillStyle='#7A3A10';
+  ctx.fillRect(rr(x+23),rr(py+7+hbob),8,16);
+  ctx.fillStyle='#3A1A08';
+  ctx.fillRect(rr(x+22),rr(py+6+hbob),3,16);
+
+  // Horse head
+  ctx.fillStyle=OL;
+  ctx.fillRect(rr(x+28),rr(py-2+hbob),14,12);
+  ctx.fillStyle='#7A3A10';
+  ctx.fillRect(rr(x+29),rr(py-1+hbob),12,10);
+  ctx.fillStyle='#3A1A08';
+  ctx.fillRect(rr(x+28),rr(py-2+hbob),3,8);
+  ctx.fillStyle='#0A0604';
+  ctx.fillRect(rr(x+38),rr(py+2+hbob),2,2);
+  ctx.fillStyle='#FFFFFF';
+  ctx.fillRect(rr(x+38),rr(py+2+hbob),1,1);
+  ctx.fillStyle='#3A1808';
+  ctx.fillRect(rr(x+40),rr(py+7+hbob),2,2);
+
+  // Saddle
+  ctx.fillStyle=OL;
+  ctx.fillRect(rr(x+4),rr(hby-4),18,6);
+  ctx.fillStyle='#3A1C08';
+  ctx.fillRect(rr(x+5),rr(hby-3),16,4);
+  ctx.fillStyle='#5A2C10';
+  ctx.fillRect(rr(x+5),rr(hby-3),16,2);
+
+  // Rider legs (straddling)
+  ctx.fillStyle=OL;
+  ctx.fillRect(rr(x+4)-1,rr(py+14)-1,8,10);
+  ctx.fillRect(rr(x+15)-1,rr(py+14)-1,8,10);
+  ctx.fillStyle=cc;
+  ctx.fillRect(rr(x+4),rr(py+14),6,8);
+  ctx.fillRect(rr(x+15),rr(py+14),6,8);
+
+  // Rider body
+  ctx.fillStyle=OL;
+  ctx.fillRect(rr(x+3)-1,rr(py+2)-1,18,14);
+  ctx.fillStyle=cc;
+  ctx.fillRect(rr(x+3),rr(py+2),16,12);
+  ctx.fillStyle=ch;
+  ctx.fillRect(rr(x+3),rr(py+2),4,12);
+  ctx.fillStyle=cs;
+  ctx.fillRect(rr(x+14),rr(py+2),5,12);
+  ctx.fillStyle='#D0CC98';
+  ctx.fillRect(rr(x+12),rr(py+1),5,6);
+  ctx.fillStyle=OL;
+  ctx.fillRect(rr(x+11),rr(py+1),2,6);
+  ctx.fillStyle='#181008';
+  ctx.fillRect(rr(x+3),rr(py+12),16,3);
+  ctx.fillStyle='#28200A';
+  ctx.fillRect(rr(x+3),rr(py+12),16,1);
+
+  // Rider arm
+  ctx.fillStyle=OL;
+  ctx.fillRect(rr(x+16),rr(py+4),12,5);
+  ctx.fillStyle=cc;
+  ctx.fillRect(rr(x+17),rr(py+5),10,3);
+  ctx.fillStyle=OL;
+  ctx.fillRect(rr(x+24),rr(py+3),5,6);
+  ctx.fillStyle=sk;
+  ctx.fillRect(rr(x+25),rr(py+4),3,4);
+  ctx.fillStyle=skS;
+  ctx.fillRect(rr(x+25),rr(py+5),3,2);
+
+  // Rider neck
+  ctx.fillStyle=OL;
+  ctx.fillRect(rr(x+8)-1,rr(py-3)-1,8,5);
+  ctx.fillStyle=sk;
+  ctx.fillRect(rr(x+8),rr(py-3),7,4);
+  ctx.fillStyle=skS;
+  ctx.fillRect(rr(x+8),rr(py-1),7,2);
+
+  // Rider head
+  ctx.fillStyle=OL;
+  ctx.fillRect(rr(x+6),rr(py-16),12,2);
+  ctx.fillRect(rr(x+3),rr(py-14),18,2);
+  ctx.fillRect(rr(x+1),rr(py-12),20,1);
+  ctx.fillRect(rr(x+0),rr(py-11),22,21);
+  ctx.fillRect(rr(x+1),rr(py+10),20,1);
+  ctx.fillRect(rr(x+3),rr(py+11),16,2);
+  ctx.fillStyle=sk;
+  ctx.fillRect(rr(x+7),rr(py-16),10,2);
+  ctx.fillRect(rr(x+4),rr(py-14),16,2);
+  ctx.fillRect(rr(x+2),rr(py-12),18,1);
+  ctx.fillRect(rr(x+1),rr(py-11),20,21);
+  ctx.fillRect(rr(x+2),rr(py+10),18,1);
+  ctx.fillRect(rr(x+4),rr(py+11),14,2);
+
+  // Rider hair
+  ctx.fillStyle='#18100A';
+  ctx.fillRect(rr(x+4),rr(py-16),10,8);
+  ctx.fillRect(rr(x+1),rr(py-11),4,20);
+  ctx.fillStyle='#2C1A0E';
+  ctx.fillRect(rr(x+4),rr(py-16),3,5);
+  ctx.fillRect(rr(x+2),rr(py-10),2,14);
+  ctx.fillStyle='#18100A';
+  ctx.fillRect(rr(x+20),rr(py-10),2,12);
+  ctx.fillStyle='#2C1C0E';
+  ctx.fillRect(rr(x+20),rr(py-8),1,8);
+
+  // Rider ponytail
+  const sway=Math.round(Math.sin(frame*0.22)*2);
+  ctx.fillStyle=OL;
+  ctx.fillRect(rr(x+0),rr(py+4),7,5);
+  ctx.fillStyle='#18100A';
+  ctx.fillRect(rr(x+1),rr(py+5),5,3);
+  ctx.fillStyle='#382C0A';
+  ctx.fillRect(rr(x+2),rr(py+5),2,2);
+  ctx.fillStyle=OL;
+  ctx.fillRect(rr(x-5+sway),rr(py+7),8,4);
+  ctx.fillRect(rr(x-6+sway),rr(py+10),8,9);
+  ctx.fillRect(rr(x-5+sway),rr(py+18),6,4);
+  ctx.fillStyle='#18100A';
+  ctx.fillRect(rr(x-4+sway),rr(py+7),6,3);
+  ctx.fillRect(rr(x-5+sway),rr(py+10),6,8);
+  ctx.fillRect(rr(x-4+sway),rr(py+18),4,3);
+  ctx.fillStyle='#2C1A0E';
+  ctx.fillRect(rr(x-4+sway),rr(py+11),2,6);
+
+  // Rider ear
+  ctx.fillStyle=OL;
+  ctx.fillRect(rr(x+0)-1,rr(py-2)-1,4,8);
+  ctx.fillStyle='#CC9048';
+  ctx.fillRect(rr(x+0),rr(py-2),3,7);
+  ctx.fillStyle=skS;
+  ctx.fillRect(rr(x+1),rr(py+0),1,4);
+
+  // Rider face shadow
+  ctx.fillStyle=skS;
+  ctx.fillRect(rr(x+4),rr(py+5),3,5);
+  ctx.fillRect(rr(x+5),rr(py+9),14,2);
+
+  // Rider brows
+  ctx.fillStyle=OL;
+  ctx.fillRect(rr(x+6),rr(py-6),5,2);
+  ctx.fillRect(rr(x+14),rr(py-6),5,2);
+  ctx.fillStyle='#18100A';
+  ctx.fillRect(rr(x+7),rr(py-6),4,1);
+  ctx.fillRect(rr(x+14),rr(py-6),4,1);
+  ctx.fillRect(rr(x+10),rr(py-5),2,1);
+  ctx.fillRect(rr(x+14),rr(py-5),2,1);
+
+  // Rider eyes
+  ctx.fillStyle=OL;
+  ctx.fillRect(rr(x+6),rr(py-3),5,5);
+  ctx.fillRect(rr(x+14),rr(py-3),5,5);
+  ctx.fillStyle='#FFFCE0';
+  ctx.fillRect(rr(x+7),rr(py-3),3,4);
+  ctx.fillRect(rr(x+15),rr(py-3),3,4);
+  ctx.fillStyle='#0A0604';
+  ctx.fillRect(rr(x+7),rr(py-1),3,3);
+  ctx.fillRect(rr(x+15),rr(py-1),3,3);
+  ctx.fillStyle='#FFFFFF';
+  ctx.fillRect(rr(x+7),rr(py-3),1,1);
+  ctx.fillRect(rr(x+15),rr(py-3),1,1);
+
+  // Rider mouth
+  ctx.fillStyle=OL;
+  ctx.fillRect(rr(x+8),rr(py+4),8,2);
+  ctx.fillStyle='#2A1008';
+  ctx.fillRect(rr(x+9),rr(py+4),6,1);
+  ctx.fillStyle=skS;
+  ctx.fillRect(rr(x+9),rr(py+5),6,1);
+
+  // Hat (amigasa)
+  ctx.fillStyle=OL;
+  ctx.fillRect(rr(x-5),rr(py-18),32,3);
+  ctx.fillRect(rr(x-1),rr(py-22),24,6);
+  ctx.fillRect(rr(x+2),rr(py-26),18,6);
+  ctx.fillRect(rr(x+5),rr(py-30),12,6);
+  ctx.fillRect(rr(x+8),rr(py-33),6,4);
+  ctx.fillStyle='#C8A828';
+  ctx.fillRect(rr(x-4),rr(py-18),30,2);
+  ctx.fillStyle='#A88018';
+  ctx.fillRect(rr(x-4),rr(py-17),30,1);
+  ctx.fillStyle='#D8B830';
+  ctx.fillRect(rr(x+0),rr(py-22),22,5);
+  ctx.fillStyle='#C8A820';
+  ctx.fillRect(rr(x+3),rr(py-26),16,5);
+  ctx.fillStyle='#B8981A';
+  ctx.fillRect(rr(x+6),rr(py-30),10,5);
+  ctx.fillStyle='#A88018';
+  ctx.fillRect(rr(x+9),rr(py-33),4,3);
+  ctx.fillStyle='#906010';
+  for(let i=0;i<4;i++) ctx.fillRect(rr(x+0+i*6),rr(py-22),1,5);
+  for(let i=0;i<3;i++) ctx.fillRect(rr(x+3+i*6),rr(py-26),1,5);
+  for(let i=0;i<2;i++) ctx.fillRect(rr(x+6+i*6),rr(py-30),1,5);
+
+  if(lv>0) drawItemIcon(rr(x+20),rr(py+6),lv,0.52);
+}
+
 function drawPlayer(py,frame,invuln,lv){
+  if(items&&items[4]){drawPlayerOnHorse(py,frame,invuln,lv);return;}
   if(invuln&&Math.floor(frame/5)%2===0) return;
   const x=PX;
-
-  // ─ 4フレーム走りサイクル (1フレーム = 7ゲームtick) ─
-  // [前足X, 前足Y, 後足X, 後足Y, 体ボブ, 前腕Y, 後腕Y]
+  // 4フレーム走りアニメ: [前足X,前足Y,後足X,後足Y,ボブ,前腕Y,後腕Y]
+  // [flx,fly, blx,bly, bob, fay, bay]  fay/bay=前腕Y位置（前構えポンプ）
   const RF=[
-    [ 7,  1, -6, -2,  0, -5,  5],  // F0: 大きく踏み出す
-    [ 3,  4, -2,  3,  3, -2,  2],  // F1: 重心が下がる
-    [-7,  1,  6, -2,  0,  5, -5],  // F2: 逆足踏み出し
-    [ 0, -2,  0, -2, -2,  0,  0],  // F3: 浮き上がる瞬間
+    [ 6, 0,-5, 0,  0, -3,-1],
+    [ 3, 4,-2, 3,  3, -1,-3],
+    [-5, 0, 6, 0,  0, -4,-2],
+    [ 0,-2, 0,-2, -2, -2,-4],
   ];
   const [flx,fly,blx,bly,bob,fay,bay]=RF[Math.floor(frame/7)%4];
   const by=py+bob;
+  const OL='#080402';
+  const cc=lv>=4?'#6A0C0C':'#5A2E0A';
+  const cs=lv>=4?'#3A0404':'#3A1C04';
+  const ch=lv>=4?'#8A1010':'#8A5020';
+  const sk='#DEAA58';
+  const skS='#B88030';
 
-  const OL='#120800';
-  function rect(col,ox,oy,ow,oh){
-    ctx.fillStyle=OL;
-    ctx.fillRect(rr(x+ox)-1,rr(by+oy)-1,ow+2,oh+2);
-    ctx.fillStyle=col;
-    ctx.fillRect(rr(x+ox),rr(by+oy),ow,oh);
-  }
-
-  // 地面の影
+  // 地面影
   ctx.fillStyle='rgba(0,0,0,0.22)';
-  ctx.beginPath();ctx.ellipse(rr(x+13),GY+3,15,4,0,0,Math.PI*2);ctx.fill();
+  ctx.fillRect(rr(x+1),GY+1,22,2);
+  ctx.fillRect(rr(x-1),GY+2,26,1);
 
-  // 着物の色（レベルに応じて変化）
-  const kc=lv>=4?'#880000':lv>=2?'#284848':'#5A3818';
-  const ks=lv>=4?'#540000':lv>=2?'#162828':'#382208';
+  // ══ 後足（袴） ══
+  ctx.fillStyle=OL; ctx.fillRect(rr(x+3+blx)-1,rr(by+24+bly)-1,9,17);
+  ctx.fillStyle=cc;  ctx.fillRect(rr(x+3+blx),rr(by+24+bly),7,16);
+  ctx.fillStyle=cs;  ctx.fillRect(rr(x+5+blx),rr(by+32+bly),3,8);
+  // 草履（後）
+  ctx.fillStyle=OL;  ctx.fillRect(rr(x+0+blx)-1,rr(by+40+bly)-1,13,5);
+  ctx.fillStyle='#A08020'; ctx.fillRect(rr(x+0+blx),rr(by+40+bly),11,4);
+  ctx.fillStyle='#C0A030'; ctx.fillRect(rr(x+1+blx),rr(by+40+bly),9,2);
+  ctx.fillStyle='#806010'; ctx.fillRect(rr(x+4+blx),rr(by+40+bly),2,4);
 
-  // ══ 後足 ══════════════════════════════════════════════════
+  // ══ ポニーテール（後ろで束ねた髪・揺れる） ══
+  const sway=Math.round(Math.sin(frame*0.22)*2);
+  ctx.fillStyle=OL;  ctx.fillRect(rr(x+0),rr(by+4),7,5);
+  ctx.fillStyle='#18100A'; ctx.fillRect(rr(x+1),rr(by+5),5,3);
+  ctx.fillStyle='#382C0A'; ctx.fillRect(rr(x+2),rr(by+5),2,2);
   ctx.fillStyle=OL;
-  ctx.fillRect(rr(x+7+blx)-1,rr(by+29+bly)-1,8,15);
-  ctx.fillStyle=ks;
-  ctx.fillRect(rr(x+7+blx),rr(by+29+bly),7,13);
-  // 裸足（後）
-  ctx.fillStyle=OL;
-  ctx.fillRect(rr(x+4+blx)-1,rr(by+41+bly)-1,11,5);
-  ctx.fillStyle='#C8906A';
-  ctx.fillRect(rr(x+4+blx),rr(by+41+bly),9,3);
-  ctx.fillStyle='#9A6040';
-  ctx.fillRect(rr(x+4+blx),rr(by+43+bly),9,1);
+  ctx.fillRect(rr(x-5+sway),rr(by+7),8,4);
+  ctx.fillRect(rr(x-6+sway),rr(by+10),8,9);
+  ctx.fillRect(rr(x-5+sway),rr(by+18),6,4);
+  ctx.fillStyle='#18100A';
+  ctx.fillRect(rr(x-4+sway),rr(by+7),6,3);
+  ctx.fillRect(rr(x-5+sway),rr(by+10),6,8);
+  ctx.fillRect(rr(x-4+sway),rr(by+18),4,3);
+  ctx.fillStyle='#2C1A0E';
+  ctx.fillRect(rr(x-4+sway),rr(by+11),2,6);
 
-  // ══ 着物・胴体 ════════════════════════════════════════════
-  rect(kc, 1, 11, 22, 23);
-  // 着物の側面シャドウ（立体感）
-  ctx.fillStyle=ks;
-  ctx.fillRect(rr(x+20),rr(by+11),3,23);
-  ctx.fillStyle=ks;
-  ctx.fillRect(rr(x+1),rr(by+11),3,23);
+  // ══ 藁背負い籠 ══
+  ctx.fillStyle=OL;  ctx.fillRect(rr(x-2),rr(by+12),12,16);
+  ctx.fillStyle='#5A3408'; ctx.fillRect(rr(x-1),rr(by+13),10,14);
+  ctx.fillStyle='#8A5118';
+  ctx.fillRect(rr(x-1),rr(by+13),10,3);
+  ctx.fillRect(rr(x-1),rr(by+17),10,3);
+  ctx.fillRect(rr(x-1),rr(by+21),10,3);
+  ctx.fillStyle='#6A3C0C';
+  ctx.fillRect(rr(x-1),rr(by+13),2,14);
+  ctx.fillRect(rr(x+3),rr(by+13),2,14);
+  ctx.fillRect(rr(x+7),rr(by+13),2,14);
+  ctx.fillStyle=OL;  ctx.fillRect(rr(x-2),rr(by+10),12,4);
+  ctx.fillStyle='#A87028'; ctx.fillRect(rr(x-1),rr(by+11),10,3);
+  ctx.fillStyle='#C8922A'; ctx.fillRect(rr(x-1),rr(by+11),10,1);
+  ctx.fillStyle=OL;  ctx.fillRect(rr(x+2),rr(by+8),4,4);
+  ctx.fillStyle='#8A5018'; ctx.fillRect(rr(x+3),rr(by+8),2,4);
+  // 一本の藁
+  ctx.fillStyle=OL;  ctx.fillRect(rr(x+3),rr(by+2),4,10);
+  ctx.fillStyle='#E8C040'; ctx.fillRect(rr(x+4),rr(by+2),2,2);
+  ctx.fillStyle='#F0D030'; ctx.fillRect(rr(x+4),rr(by+3),2,4);
+  ctx.fillStyle='#C8A820'; ctx.fillRect(rr(x+4),rr(by+6),2,5);
+  ctx.fillStyle='#806010'; ctx.fillRect(rr(x+4),rr(by+10),2,2);
 
-  // つぎはぎパッチ（レベル3以下）
+  // ══ 胴体（短い着物・膝上） ══
+  ctx.fillStyle=OL; ctx.fillRect(rr(x+3)-1,rr(by+12)-1,16,13);
+  ctx.fillStyle=cc;  ctx.fillRect(rr(x+3),rr(by+12),14,12);
+  ctx.fillStyle=ch;  ctx.fillRect(rr(x+3),rr(by+12),4,12);
+  ctx.fillStyle=cs;  ctx.fillRect(rr(x+14),rr(by+12),3,12);
   if(lv<4){
-    // パッチ1：胸元（薄茶）
-    ctx.fillStyle='#9A7040';
-    ctx.fillRect(rr(x+3),rr(by+13),7,6);
-    ctx.fillStyle='#BAA060';
-    ctx.fillRect(rr(x+3),rr(by+13),7,1);
-    ctx.fillRect(rr(x+3),rr(by+18),7,1);
-    ctx.fillRect(rr(x+3),rr(by+13),1,6);
-    ctx.fillRect(rr(x+9),rr(by+13),1,6);
-    // パッチ2：腹部（濃茶）
-    ctx.fillStyle='#3A2410';
-    ctx.fillRect(rr(x+13),rr(by+21),6,7);
-    ctx.fillStyle='#584030';
-    ctx.fillRect(rr(x+13),rr(by+21),6,1);
-    ctx.fillRect(rr(x+13),rr(by+27),6,1);
-    // パッチ3：左脇（灰茶）
-    ctx.fillStyle='#584838';
-    ctx.fillRect(rr(x+4),rr(by+21),5,6);
-    ctx.fillStyle='#786858';
-    ctx.fillRect(rr(x+4),rr(by+21),5,1);
-    ctx.fillRect(rr(x+4),rr(by+26),5,1);
+    ctx.fillStyle='#3A2408';
+    ctx.fillRect(rr(x+8),rr(by+14),4,4);
+    ctx.fillStyle='#5C3A10';
+    ctx.fillRect(rr(x+8),rr(by+14),4,1); ctx.fillRect(rr(x+8),rr(by+14),1,4);
   }
+  ctx.fillStyle='#D0CC98'; ctx.fillRect(rr(x+11),rr(by+11),5,7);
+  ctx.fillStyle=OL; ctx.fillRect(rr(x+10),rr(by+11),2,7);
+  ctx.fillStyle=OL; ctx.fillRect(rr(x+3)-1,rr(by+21)-1,16,4);
+  ctx.fillStyle='#181008'; ctx.fillRect(rr(x+3),rr(by+21),14,3);
+  ctx.fillStyle='#28200A'; ctx.fillRect(rr(x+3),rr(by+21),14,1);
 
-  // 衿（白・クリーム色）── 着物の合わせ目を太めに
-  ctx.fillStyle=OL;
-  ctx.fillRect(rr(x+11),rr(by+9),9,6);
-  ctx.fillStyle='#F0E4C0';
-  ctx.fillRect(rr(x+12),rr(by+10),7,5);
-  ctx.fillStyle='#D0C090';
-  ctx.fillRect(rr(x+12),rr(by+14),7,1); // 衿の影ライン
+  // ══ 後腕（前構え） ══
+  ctx.fillStyle=OL; ctx.fillRect(rr(x+3),rr(by+13),6,7);
+  ctx.fillStyle=cc;  ctx.fillRect(rr(x+4),rr(by+13),4,6);
+  ctx.fillStyle=ch;  ctx.fillRect(rr(x+4),rr(by+13),1,6);
+  ctx.fillStyle=OL; ctx.fillRect(rr(x+6),rr(by+17+bay),11,5);
+  ctx.fillStyle=cc;  ctx.fillRect(rr(x+7),rr(by+18+bay),9,3);
+  ctx.fillStyle=ch;  ctx.fillRect(rr(x+7),rr(by+18+bay),2,3);
+  ctx.fillStyle=OL; ctx.fillRect(rr(x+14),rr(by+16+bay),5,6);
+  ctx.fillStyle=sk;  ctx.fillRect(rr(x+15),rr(by+17+bay),3,4);
+  ctx.fillStyle=skS; ctx.fillRect(rr(x+15),rr(by+18+bay),3,2);
 
-  // ══ 帯 ════════════════════════════════════════════════════
-  ctx.fillStyle=OL;
-  ctx.fillRect(rr(x+1),rr(by+25),22,5);
-  ctx.fillStyle='#2A1408';
-  ctx.fillRect(rr(x+2),rr(by+26),20,4);
-  ctx.fillStyle='#1A0C04';
-  ctx.fillRect(rr(x+2),rr(by+26),20,1); // 帯の上ライン
-  ctx.fillStyle='#3A2010';
-  ctx.fillRect(rr(x+2),rr(by+29),20,1); // 帯の下ライン
+  // ══ 前足（袴） ══
+  ctx.fillStyle=OL; ctx.fillRect(rr(x+10+flx)-1,rr(by+24+fly)-1,9,17);
+  ctx.fillStyle=cc;  ctx.fillRect(rr(x+10+flx),rr(by+24+fly),7,16);
+  ctx.fillStyle=cs;  ctx.fillRect(rr(x+12+flx),rr(by+32+fly),3,8);
+  // 草履（前）
+  ctx.fillStyle=OL;  ctx.fillRect(rr(x+7+flx)-1,rr(by+40+fly)-1,13,5);
+  ctx.fillStyle='#C0A030'; ctx.fillRect(rr(x+7+flx),rr(by+40+fly),11,4);
+  ctx.fillStyle='#D8BC40'; ctx.fillRect(rr(x+8+flx),rr(by+40+fly),9,2);
+  ctx.fillStyle='#806010'; ctx.fillRect(rr(x+11+flx),rr(by+40+fly),2,4);
 
-  // ══ 腰のわら（一本差し） ══════════════════════════════════
-  ctx.save();
-  ctx.strokeStyle='#C8A020'; ctx.lineWidth=2;
-  ctx.beginPath();
-  ctx.moveTo(rr(x+17),rr(by+27));
-  ctx.lineTo(rr(x+13),rr(by+39));
-  ctx.stroke();
-  ctx.strokeStyle='#E8C840'; ctx.lineWidth=1;
-  ctx.beginPath();
-  ctx.moveTo(rr(x+16),rr(by+27));
-  ctx.lineTo(rr(x+12),rr(by+39));
-  ctx.stroke();
-  ctx.fillStyle='#C8A020';
-  ctx.fillRect(rr(x+10),rr(by+39),3,1);
-  ctx.fillRect(rr(x+9), rr(by+40),4,1);
-  ctx.fillRect(rr(x+11),rr(by+41),3,1);
-  ctx.fillStyle='#E8C840';
-  ctx.fillRect(rr(x+11),rr(by+39),2,1);
-  ctx.restore();
+  // ══ 前腕（前構え・より前に） ══
+  ctx.fillStyle=OL; ctx.fillRect(rr(x+13),rr(by+12),6,8);
+  ctx.fillStyle=cc;  ctx.fillRect(rr(x+14),rr(by+12),4,7);
+  ctx.fillStyle=ch;  ctx.fillRect(rr(x+14),rr(by+12),1,7);
+  ctx.fillStyle=OL; ctx.fillRect(rr(x+16),rr(by+16+fay),12,5);
+  ctx.fillStyle=cc;  ctx.fillRect(rr(x+17),rr(by+17+fay),10,3);
+  ctx.fillStyle=ch;  ctx.fillRect(rr(x+17),rr(by+17+fay),2,3);
+  ctx.fillStyle=OL; ctx.fillRect(rr(x+24),rr(by+15+fay),5,6);
+  ctx.fillStyle=sk;  ctx.fillRect(rr(x+25),rr(by+16+fay),3,4);
+  ctx.fillStyle=skS; ctx.fillRect(rr(x+25),rr(by+17+fay),3,2);
 
-  // ══ 後腕 ══════════════════════════════════════════════════
-  ctx.fillStyle=OL;
-  ctx.fillRect(rr(x+2),rr(by+13+bay)-1,8,13);
-  ctx.fillStyle=kc;
-  ctx.fillRect(rr(x+2),rr(by+13+bay),7,11);
-  if(lv<4){
-    ctx.fillStyle='#7A5030';
-    ctx.fillRect(rr(x+2),rr(by+17+bay),6,4);
-    ctx.fillStyle='#9A7050';
-    ctx.fillRect(rr(x+2),rr(by+17+bay),6,1);
-    ctx.fillRect(rr(x+2),rr(by+20+bay),6,1);
-  }
-  // 後手
-  ctx.fillStyle=OL;
-  ctx.fillRect(rr(x+2),rr(by+24+bay)-1,7,5);
-  ctx.fillStyle='#C8906A';
-  ctx.fillRect(rr(x+2),rr(by+24+bay),6,4);
-  ctx.fillStyle='#A87050';
-  ctx.fillRect(rr(x+2),rr(by+24+bay),2,2);
+  // ══ 首 ══
+  ctx.fillStyle=OL; ctx.fillRect(rr(x+8)-1,rr(by+9)-1,8,5);
+  ctx.fillStyle=sk;  ctx.fillRect(rr(x+8),rr(by+9),7,4);
+  ctx.fillStyle=skS; ctx.fillRect(rr(x+8),rr(by+11),7,2);
 
-  // ══ 前腕 ══════════════════════════════════════════════════
-  ctx.fillStyle=OL;
-  ctx.fillRect(rr(x+18),rr(by+13+fay)-1,8,13);
-  ctx.fillStyle=kc;
-  ctx.fillRect(rr(x+18),rr(by+13+fay),7,11);
-  if(lv<4){
-    ctx.fillStyle='#9A7040';
-    ctx.fillRect(rr(x+20),rr(by+17+fay),6,4);
-    ctx.fillStyle='#BAA060';
-    ctx.fillRect(rr(x+20),rr(by+17+fay),6,1);
-    ctx.fillRect(rr(x+20),rr(by+20+fay),6,1);
-  }
-  // 前手
-  ctx.fillStyle=OL;
-  ctx.fillRect(rr(x+18),rr(by+24+fay)-1,7,5);
-  ctx.fillStyle='#C8906A';
-  ctx.fillRect(rr(x+18),rr(by+24+fay),6,4);
-  ctx.fillStyle='#E0AA80';
-  ctx.fillRect(rr(x+22),rr(by+24+fay),2,2);
+  // ════════════════════════════════════════════
+  // 頭部（大きな丸頭・ネス風2.5頭身）
+  // ════════════════════════════════════════════
 
-  // ══ 前足 ══════════════════════════════════════════════════
+  // 輪郭（ピクセル楕円・OL）
   ctx.fillStyle=OL;
-  ctx.fillRect(rr(x+9+flx)-1,rr(by+29+fly)-1,9,14);
-  ctx.fillStyle=kc;
-  ctx.fillRect(rr(x+9+flx),rr(by+29+fly),8,12);
-  if(lv<4){
-    ctx.fillStyle='#8A6030';
-    ctx.fillRect(rr(x+10+flx),rr(by+31+fly),5,5);
-    ctx.fillStyle='#AA8050';
-    ctx.fillRect(rr(x+10+flx),rr(by+31+fly),5,1);
-    ctx.fillRect(rr(x+10+flx),rr(by+35+fly),5,1);
-  }
-  // 裸足（前）
-  ctx.fillStyle=OL;
-  ctx.fillRect(rr(x+7+flx)-1,rr(by+41+fly)-1,13,6);
-  ctx.fillStyle='#C8906A';
-  ctx.fillRect(rr(x+7+flx),rr(by+41+fly),11,4);
-  ctx.fillStyle='#DCA880'; // つま先
-  ctx.fillRect(rr(x+16+flx),rr(by+41+fly),2,2);
-  ctx.fillRect(rr(x+14+flx),rr(by+41+fly),2,2);
-  ctx.fillRect(rr(x+12+flx),rr(by+41+fly),2,1);
-  ctx.fillStyle='#9A6040'; // 汚れ
-  ctx.fillRect(rr(x+8+flx),rr(by+44+fly),8,1);
+  ctx.fillRect(rr(x+6),rr(by-16),12,2);
+  ctx.fillRect(rr(x+3),rr(by-14),18,2);
+  ctx.fillRect(rr(x+1),rr(by-12),20,1);
+  ctx.fillRect(rr(x+0),rr(by-11),22,21);
+  ctx.fillRect(rr(x+1),rr(by+10),20,1);
+  ctx.fillRect(rr(x+3),rr(by+11),16,2);
+  // 肌色（内側）
+  ctx.fillStyle=sk;
+  ctx.fillRect(rr(x+7),rr(by-16),10,2);
+  ctx.fillRect(rr(x+4),rr(by-14),16,2);
+  ctx.fillRect(rr(x+2),rr(by-12),18,1);
+  ctx.fillRect(rr(x+1),rr(by-11),20,21);
+  ctx.fillRect(rr(x+2),rr(by+10),18,1);
+  ctx.fillRect(rr(x+4),rr(by+11),14,2);
 
-  // ══ 首 ════════════════════════════════════════════════════
-  ctx.fillStyle=OL;
-  ctx.fillRect(rr(x+13),rr(by+7),7,6);
-  ctx.fillStyle='#D8A070';
-  ctx.fillRect(rr(x+14),rr(by+8),5,5);
-  ctx.fillStyle='#B88050';
-  ctx.fillRect(rr(x+14),rr(by+8),2,5); // 首の影
-
-  // ══ 頭部（横向き・右向き顔） ═══════════════════════════════
-  ctx.fillStyle=OL;
-  ctx.fillRect(rr(x+10),rr(by-2),17,14);
-  ctx.fillStyle='#DCA870';
-  ctx.fillRect(rr(x+11),rr(by-1),15,12);
-  ctx.fillRect(rr(x+10),rr(by+2),3,8);  // あご・えら
-  // 頬（日焼け）
-  ctx.fillStyle='#C88858';
-  ctx.fillRect(rr(x+20),rr(by+4),4,3);
-  // あご輪郭
-  ctx.fillStyle='#B87848';
-  ctx.fillRect(rr(x+10),rr(by+8),2,3);
+  // 総髪（頭を覆う黒髪）
+  ctx.fillStyle='#18100A';
+  ctx.fillRect(rr(x+4),rr(by-16),10,8);
+  ctx.fillRect(rr(x+1),rr(by-11),4,20);
+  ctx.fillStyle='#2C1A0E';
+  ctx.fillRect(rr(x+4),rr(by-16),3,5);
+  ctx.fillRect(rr(x+2),rr(by-10),2,14);
 
   // 耳
+  ctx.fillStyle=OL;  ctx.fillRect(rr(x+0)-1,rr(by-2)-1,4,8);
+  ctx.fillStyle='#CC9048'; ctx.fillRect(rr(x+0),rr(by-2),3,7);
+  ctx.fillStyle=skS; ctx.fillRect(rr(x+1),rr(by+0),1,4);
+
+  // 後ろ髪（耳の後ろ）
+  ctx.fillStyle='#18100A';
+  ctx.fillRect(rr(x+20),rr(by-10),2,12);
+  ctx.fillStyle='#2C1C0E';
+  ctx.fillRect(rr(x+20),rr(by-8),1,8);
+
+  // 顔の影
+  ctx.fillStyle=skS;
+  ctx.fillRect(rr(x+4),rr(by+5),3,5);
+  ctx.fillRect(rr(x+5),rr(by+9),14,2);
+
+  // 眉（険しい決意）
   ctx.fillStyle=OL;
-  ctx.fillRect(rr(x+11)-1,rr(by+3)-1,4,6);
-  ctx.fillStyle='#D09860';
-  ctx.fillRect(rr(x+11),rr(by+3),3,5);
-  ctx.fillStyle='#B07840';
-  ctx.fillRect(rr(x+11),rr(by+5),2,2);
+  ctx.fillRect(rr(x+6),rr(by-6),5,2);
+  ctx.fillRect(rr(x+14),rr(by-6),5,2);
+  ctx.fillStyle='#18100A';
+  ctx.fillRect(rr(x+7),rr(by-6),4,1);
+  ctx.fillRect(rr(x+14),rr(by-6),4,1);
+  ctx.fillRect(rr(x+10),rr(by-5),2,1);
+  ctx.fillRect(rr(x+14),rr(by-5),2,1);
 
-  // 目（白目＋黒目）
-  ctx.fillStyle='#F0E8D0'; // 白目
-  ctx.fillRect(rr(x+20),rr(by+2),5,4);
-  ctx.fillStyle='#140800'; // 黒目
-  ctx.fillRect(rr(x+21),rr(by+2),3,4);
-  ctx.fillStyle='#000000';
-  ctx.fillRect(rr(x+22),rr(by+3),1,2); // 瞳
-  ctx.fillStyle='rgba(255,255,255,0.8)';
-  ctx.fillRect(rr(x+23),rr(by+2),1,1); // ハイライト
-
-  // 眉（太め・力強く）
-  ctx.fillStyle='#2A1408';
-  ctx.fillRect(rr(x+19),rr(by+0),6,2);
-  ctx.fillStyle='#1A0C04';
-  ctx.fillRect(rr(x+23),rr(by-1),2,1);  // 眉尻上がり
-
-  // 鼻
-  ctx.fillStyle='#B07848';
-  ctx.fillRect(rr(x+24),rr(by+4),2,3);
-  ctx.fillStyle='#180800';
-  ctx.fillRect(rr(x+24),rr(by+6),2,1); // 鼻の穴
-
-  // 口（必死な表情、少し開いた）
-  ctx.fillStyle='#8A4030';
-  ctx.fillRect(rr(x+21),rr(by+7),4,2);
-  ctx.fillStyle='#200800';
-  ctx.fillRect(rr(x+22),rr(by+8),2,1); // 口の中
-  ctx.fillStyle='#D08060';
-  ctx.fillRect(rr(x+21),rr(by+7),4,1); // 上唇
-
-  // ══ ちょんまげ ════════════════════════════════════════════
-  // 後頭部・側頭の地毛
+  // 目（ネス風・点目）
   ctx.fillStyle=OL;
-  ctx.fillRect(rr(x+9),rr(by-2),6,13);
-  ctx.fillStyle='#1A0E08';
-  ctx.fillRect(rr(x+10),rr(by-1),5,12);
-  // 頭頂部の毛
+  ctx.fillRect(rr(x+6),rr(by-3),5,5);
+  ctx.fillRect(rr(x+14),rr(by-3),5,5);
+  ctx.fillStyle='#FFFCE0';
+  ctx.fillRect(rr(x+7),rr(by-3),3,4);
+  ctx.fillRect(rr(x+15),rr(by-3),3,4);
+  ctx.fillStyle='#0A0604';
+  ctx.fillRect(rr(x+7),rr(by-1),3,3);
+  ctx.fillRect(rr(x+15),rr(by-1),3,3);
+  ctx.fillStyle='#FFFFFF';
+  ctx.fillRect(rr(x+7),rr(by-3),1,1);
+  ctx.fillRect(rr(x+15),rr(by-3),1,1);
+
+  // 口（引き結んだ一文字・決意）
+  ctx.fillStyle=OL; ctx.fillRect(rr(x+8),rr(by+4),8,2);
+  ctx.fillStyle='#2A1008'; ctx.fillRect(rr(x+9),rr(by+4),6,1);
+  ctx.fillStyle=skS; ctx.fillRect(rr(x+9),rr(by+5),6,1);
+
+  // ══ 編み笠 ══
   ctx.fillStyle=OL;
-  ctx.fillRect(rr(x+9),rr(by-3),15,5);
-  ctx.fillStyle='#1A0E08';
-  ctx.fillRect(rr(x+10),rr(by-2),13,4);
-  ctx.fillStyle='#2C1C12';
-  ctx.fillRect(rr(x+11),rr(by-2),10,2); // ハイライト
+  ctx.fillRect(rr(x-5),rr(by-18),32,3);
+  ctx.fillRect(rr(x-1),rr(by-22),24,6);
+  ctx.fillRect(rr(x+2),rr(by-26),18,6);
+  ctx.fillRect(rr(x+5),rr(by-30),12,6);
+  ctx.fillRect(rr(x+8),rr(by-33),6,4);
+  ctx.fillStyle='#C8A828';
+  ctx.fillRect(rr(x-4),rr(by-18),30,2);
+  ctx.fillStyle='#A88018';
+  ctx.fillRect(rr(x-4),rr(by-17),30,1);
+  ctx.fillStyle='#D8B830';
+  ctx.fillRect(rr(x+0),rr(by-22),22,5);
+  ctx.fillStyle='#C8A820';
+  ctx.fillRect(rr(x+3),rr(by-26),16,5);
+  ctx.fillStyle='#B8981A';
+  ctx.fillRect(rr(x+6),rr(by-30),10,5);
+  ctx.fillStyle='#A88018';
+  ctx.fillRect(rr(x+9),rr(by-33),4,3);
+  ctx.fillStyle='#906010';
+  for(let i=0;i<4;i++) ctx.fillRect(rr(x+0+i*6),rr(by-22),1,5);
+  for(let i=0;i<3;i++) ctx.fillRect(rr(x+3+i*6),rr(by-26),1,5);
+  for(let i=0;i<2;i++) ctx.fillRect(rr(x+6+i*6),rr(by-30),1,5);
 
-  // まげ本体（前傾気味の毛束）
-  ctx.fillStyle=OL;
-  ctx.fillRect(rr(x+13),rr(by-17),9,17);
-  ctx.fillStyle='#1A0E08';
-  ctx.fillRect(rr(x+14),rr(by-16),7,15);
-  // 毛の流れテクスチャ
-  ctx.fillStyle='#2C1C12';
-  ctx.fillRect(rr(x+14),rr(by-16),7,2);
-  ctx.fillRect(rr(x+14),rr(by-13),7,2);
-  ctx.fillRect(rr(x+14),rr(by-10),7,2);
-  ctx.fillRect(rr(x+14),rr(by-7 ),7,2);
-  ctx.fillStyle='#0E0804';
-  ctx.fillRect(rr(x+14),rr(by-16),2,15); // 影側
-  // まげ先端（前方にくるっと折れる）
-  ctx.fillStyle='#1A0E08';
-  ctx.fillRect(rr(x+15),rr(by-18),7,2);
-  ctx.fillRect(rr(x+19),rr(by-19),4,2);
-  ctx.fillStyle='#2C1C12';
-  ctx.fillRect(rr(x+20),rr(by-19),3,1);
-
-  // まげを結ぶ紐
-  ctx.fillStyle=OL;
-  ctx.fillRect(rr(x+13),rr(by-2),9,4);
-  ctx.fillStyle='#605040';
-  ctx.fillRect(rr(x+14),rr(by-1),7,3);
-  ctx.fillStyle='#908060';
-  ctx.fillRect(rr(x+14),rr(by-1),7,1); // 紐のハイライト
-  ctx.fillStyle='#302010';
-  ctx.fillRect(rr(x+15),rr(by+1), 5,1);
-
-  // ボサボサの乱れ毛（数本）
-  ctx.fillStyle='#1A0E08';
-  ctx.fillRect(rr(x+12),rr(by-9 ),2,1);
-  ctx.fillRect(rr(x+22),rr(by-12),2,1);
-  ctx.fillRect(rr(x+21),rr(by-15),2,1);
-  ctx.fillRect(rr(x+12),rr(by-5 ),1,5);  // こめかみ垂れ毛
-  ctx.fillRect(rr(x+11),rr(by+1 ),2,4);  // もみあげ
-  ctx.fillRect(rr(x+13),rr(by-2 ),1,3);  // 生え際の毛
-
-  // ══ 所持アイテム ══════════════════════════════════════════
-  if(lv>0) drawItemIcon(rr(x+20),rr(by+20),lv,0.54);
+  if(lv>0) drawItemIcon(rr(x+18),rr(by+19),lv,0.52);
 }
 
 // ── Chain icon (shared: player sprite + slot UI) ───────────
@@ -1161,7 +1351,7 @@ function drawKite(x,y,frame){
 
 // Crow  (3 types: front / back / dive)
 function drawCrow(x,y,sub,frame){
-  const wb=Math.sin(frame*0.24)*7;
+  const wb=Math.sin(frame*0.32)*12;
   const cx=rr(x), cy=rr(y);
 
   // Tint glow by type
@@ -1431,12 +1621,130 @@ function drawOihagi(ex,ey,phase,frame){
   }
 }
 
+function drawTanuki(x,y,frame){
+  const cx=rr(x+8);
+  const OL='#120800';
+  const bob=Math.floor(frame/8)%2;
+
+  // 笠（わら帽子）
+  ctx.fillStyle=OL; ctx.fillRect(cx-12,rr(y-6),26,3);
+  ctx.fillStyle='#C8A030'; ctx.fillRect(cx-11,rr(y-5),24,2);
+  ctx.fillStyle=OL; ctx.fillRect(cx-5,rr(y-12),12,8);
+  ctx.fillStyle='#D8B040'; ctx.fillRect(cx-4,rr(y-11),10,7);
+  ctx.fillStyle='#B89028'; ctx.fillRect(cx-4,rr(y-11),10,2);
+
+  // 耳
+  ctx.fillStyle=OL; ctx.fillRect(cx-9,rr(y),5,5); ctx.fillStyle='#D09050'; ctx.fillRect(cx-8,rr(y+1),3,3);
+  ctx.fillStyle=OL; ctx.fillRect(cx+4,rr(y),5,5); ctx.fillStyle='#D09050'; ctx.fillRect(cx+5,rr(y+1),3,3);
+
+  // 頭
+  ctx.fillStyle=OL; ctx.beginPath(); ctx.arc(cx,rr(y+8),9,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#C07830'; ctx.beginPath(); ctx.arc(cx,rr(y+8),8,0,Math.PI*2); ctx.fill();
+
+  // たぬき目隈（目の周りの黒い毛）
+  ctx.fillStyle='#1A0800';
+  ctx.fillRect(cx-7,rr(y+5),5,5); ctx.fillRect(cx+2,rr(y+5),5,5);
+  // 目
+  ctx.fillStyle='#F0E0B0'; ctx.fillRect(cx-6,rr(y+6),3,3); ctx.fillRect(cx+3,rr(y+6),3,3);
+  ctx.fillStyle='#060200'; ctx.fillRect(cx-5,rr(y+7),2,2); ctx.fillRect(cx+4,rr(y+7),2,2);
+  ctx.fillStyle='#FFFFFF'; ctx.fillRect(cx-4,rr(y+7),1,1); ctx.fillRect(cx+5,rr(y+7),1,1);
+  // 鼻・口
+  ctx.fillStyle='#1A0800'; ctx.fillRect(cx-2,rr(y+11),4,2);
+  ctx.fillStyle='#E87040'; ctx.fillRect(cx-1,rr(y+11),2,1);
+  ctx.fillStyle='#1A0800';
+  ctx.fillRect(cx-3,rr(y+13),7,1);
+  ctx.fillRect(cx-3,rr(y+12),1,1); ctx.fillRect(cx+3,rr(y+12),1,1);
+
+  // 胴体（太鼓腹）
+  ctx.fillStyle=OL; ctx.fillRect(cx-8,rr(y+15),18,16);
+  ctx.fillStyle='#9A5C22'; ctx.fillRect(cx-7,rr(y+16),16,14);
+  // お腹
+  ctx.fillStyle='#D09050'; ctx.fillRect(cx-4,rr(y+17),10,11);
+  ctx.fillStyle='#B07838'; ctx.fillRect(cx-3,rr(y+22),8,4);
+
+  // 腕
+  ctx.fillStyle='#9A5C22'; ctx.fillRect(cx-11,rr(y+17),5,9); ctx.fillRect(cx+8,rr(y+17),5,9);
+  ctx.fillStyle='#7A4820'; ctx.fillRect(cx-11,rr(y+23),5,3); ctx.fillRect(cx+8,rr(y+23),5,3);
+
+  // 足（歩行アニメ）
+  if(bob===0){
+    ctx.fillStyle=OL; ctx.fillRect(cx-5,rr(y+29),5,7); ctx.fillRect(cx+1,rr(y+28),5,7);
+    ctx.fillStyle='#7A4820'; ctx.fillRect(cx-4,rr(y+30),4,6); ctx.fillRect(cx+2,rr(y+29),4,6);
+  } else {
+    ctx.fillStyle=OL; ctx.fillRect(cx-5,rr(y+28),5,7); ctx.fillRect(cx+1,rr(y+29),5,7);
+    ctx.fillStyle='#7A4820'; ctx.fillRect(cx-4,rr(y+29),4,6); ctx.fillRect(cx+2,rr(y+30),4,6);
+  }
+  // 地面影
+  ctx.fillStyle='rgba(0,0,0,0.18)';
+  ctx.beginPath(); ctx.ellipse(cx,GY+2,14,3,0,0,Math.PI*2); ctx.fill();
+}
+
+function drawOihagiSword(ex,ey,isThrust,frame){
+  const bx=ex,by=ey;
+  const sLen=isThrust?44:22;
+  const sx=rr(bx-sLen+2);
+  const sy=rr(by+26);
+  if(isThrust){
+    ctx.fillStyle='rgba(200,180,80,0.4)';
+    ctx.fillRect(sx-4,sy-3,sLen+8,8);
+    ctx.fillStyle='#120800'; ctx.fillRect(sx-1,sy-1,sLen+2,4);
+    ctx.fillStyle='#C0A030'; ctx.fillRect(sx,sy,sLen,2);
+    ctx.fillStyle='#E0C050'; ctx.fillRect(sx+2,sy,sLen-4,1);
+    ctx.fillStyle='#120800'; ctx.fillRect(rr(bx-1)-1,sy-3,7,10);
+    ctx.fillStyle='#604020'; ctx.fillRect(rr(bx-1),sy-2,6,8);
+    ctx.fillStyle='#E0C050'; ctx.fillRect(sx,sy,3,2);
+  } else {
+    ctx.fillStyle='#120800'; ctx.fillRect(sx-1,sy-1,sLen+2,3);
+    ctx.fillStyle='#C0A030'; ctx.fillRect(sx,sy,sLen,1);
+    ctx.fillStyle='#604020'; ctx.fillRect(rr(bx-1),sy-2,5,5);
+  }
+}
+
+function drawOihagiRush(ex,ey,frame){
+  const t=frame*0.3;
+  ctx.fillStyle='rgba(255,80,0,0.55)';
+  ctx.fillRect(rr(ex+28),rr(ey+18),Math.round(8+Math.sin(t)*4),2);
+  ctx.fillRect(rr(ex+32),rr(ey+26),Math.round(12+Math.sin(t+1)*4),2);
+  ctx.fillRect(rr(ex+30),rr(ey+34),Math.round(10+Math.sin(t+2)*4),2);
+  ctx.fillStyle='rgba(255,140,0,0.35)';
+  ctx.fillRect(rr(ex+26),rr(ey+14),Math.round(16+Math.sin(t+0.5)*5),2);
+  ctx.fillRect(rr(ex+24),rr(ey+42),Math.round(14+Math.sin(t+1.5)*4),2);
+}
+
+function drawOihagiLunge(ex,ey,phase,chargeT){
+  if(phase==='charge'){
+    const intensity=Math.min(1,chargeT/50);
+    ctx.fillStyle=`rgba(120,0,220,${0.3*intensity})`;
+    ctx.beginPath();
+    ctx.arc(rr(ex+14),rr(ey+30),Math.round(16+intensity*6),0,Math.PI*2);
+    ctx.fill();
+    ctx.fillStyle=`rgba(180,80,255,${0.7*intensity})`;
+    for(let i=0;i<4;i++){
+      ctx.fillRect(rr(ex+4+Math.sin(chargeT*0.2+i*1.57)*16),rr(ey+20+Math.cos(chargeT*0.2+i*1.57)*16),2,2);
+    }
+    if(chargeT>30){
+      ctx.fillStyle='rgba(255,0,0,0.8)';
+      ctx.fillRect(rr(ex+10),rr(ey-20),10,6);
+      ctx.fillStyle='rgba(255,200,0,0.9)';
+      ctx.fillRect(rr(ex+14),rr(ey-19),2,4);
+      ctx.fillRect(rr(ex+14),rr(ey-14),2,2);
+    }
+  } else if(phase==='lunge'){
+    ctx.fillStyle='rgba(120,0,220,0.30)';
+    ctx.fillRect(rr(ex+18),rr(ey+8),22,38);
+    ctx.fillStyle='rgba(120,0,220,0.18)';
+    ctx.fillRect(rr(ex+30),rr(ey+10),18,34);
+    ctx.fillStyle='rgba(120,0,220,0.10)';
+    ctx.fillRect(rr(ex+42),rr(ey+12),14,30);
+  }
+}
+
 // ══════════════════════════════════════════════════════════
 // GAME STATE
 // ══════════════════════════════════════════════════════════
 let state='start';
 let dist,speed,py,vy,grounded,lives,invuln,invT,frame,entities,spawnD,stageIdx,msg,msgT;
-let bridgeActive,bridgeStartDist,bridgeHoles,bridgeDebris,bridgeWarnDone;
+let bridgeActive,bridgeStartDist,bridgeHoles,bridgeDebris,bridgeWarnDone,bridgeDoneMsg;
 let items,lostItems,clearRank,npcPopT,npcPopMsg;
 let endT,endPlayerX,endFade,endMansionX; // ending cinematic
 
@@ -1445,7 +1753,7 @@ function initGame(){
   lives=5; invuln=false; invT=0; frame=0;
   entities=[]; spawnD=0; stageIdx=0; msg=''; msgT=0;
   bridgeActive=false; bridgeStartDist=BRIDGE_EVERY;
-  bridgeHoles=[]; bridgeDebris=[]; bridgeWarnDone=false;
+  bridgeHoles=[]; bridgeDebris=[]; bridgeWarnDone=false; bridgeDoneMsg=false;
   items=[true,false,false,false,false];
   lostItems=[false,false,false,false,false];
   clearRank=4; npcPopT=0; npcPopMsg='';
@@ -1477,19 +1785,9 @@ function spawnEntity(){
     }
     e={type:'npc',chainIdx,x:GW+10,y:GY-56,vy:0,alive:true};
   }
-  else if(r>heartP) e={type:'heart',sub:'heart',x:GW+10,y:GY-66,vy:0,alive:true};
+  else if(r>heartP) e={type:'heart',sub:'heart',x:GW+10,y:GY-50,vy:0,alive:true};
   else if(r>obstP){
-    const hr=items.reduce((m,v,i)=>v?i:m,-1);
-    let dropIdx;
-    if(hr>0){
-      const collectible=[];
-      for(let i=0;i<hr;i++) if(!items[i]) collectible.push(i);
-      dropIdx=(collectible.length>0&&Math.random()<0.65)
-        ?collectible[Math.floor(Math.random()*collectible.length)]
-        :Math.floor(Math.random()*5);
-    } else {
-      dropIdx=Math.floor(Math.random()*5);
-    }
+    const dropIdx=Math.floor(Math.random()*5);
     e={type:'drop',chainIdx:dropIdx,x:GW+10,y:GY-36,vy:0,alive:true};
   }
   else{
@@ -1497,10 +1795,16 @@ function spawnEntity(){
     const lateGame=dist>2000;
     if(o<0.18)       e={type:'obstacle',sub:'rock',        x:GW,    y:GY-20,vy:0,alive:true};
     else if(o<0.30)  e={type:'obstacle',sub:'kite',        x:GW,    y:GY-128,vy:0,alive:true};
-    else if(o<0.46)  e={type:'obstacle',sub:'crow_front',  x:GW+10, y:GY-50,vy:0,alive:true};
-    else if(o<0.59)  e={type:'obstacle',sub:'crow_back',   x:-30,   y:GY-52,vy:0,alive:true};
-    else if(o<(lateGame?0.71:0.68)) e={type:'obstacle',sub:'crow_zigzag',x:GW+10,y:GY-88,vy:0,alive:true,phase:Math.random()*Math.PI*2};
-    else if(!bridgeActive&&dist>800&&o<0.86) e={type:'obstacle',sub:'oihagi',x:GW+10,y:GY-54,vy:0,alive:true,phase:'grin'};
+    else if(o<0.50)  e={type:'obstacle',sub:'crow_front',  x:GW+10, y:GY-50,vy:0,alive:true};
+    else if(o<(lateGame?0.68:0.64)) e={type:'obstacle',sub:'crow_zigzag',x:GW+10,y:GY-80,vy:0,alive:true,phase:Math.random()*Math.PI*2};
+    else if(!bridgeActive&&dist>800&&o<0.90){
+      const ov=Math.random();
+      if(ov<0.28)      e={type:'obstacle',sub:'tanuki',       x:GW+10,y:GY-30,vy:0,alive:true,bounce:0};
+      else if(ov<0.50) e={type:'obstacle',sub:'oihagi',       x:GW+10,y:GY-54,vy:0,alive:true,phase:'grin'};
+      else if(ov<0.68) e={type:'obstacle',sub:'oihagi_sword', x:GW+10,y:GY-54,vy:0,alive:true,phase:'approach'};
+      else if(ov<0.82) e={type:'obstacle',sub:'oihagi_rush',  x:GW+10,y:GY-54,vy:0,alive:true,phase:0};
+      else             e={type:'obstacle',sub:'oihagi_lunge', x:GW+10,y:GY-54,vy:0,alive:true,phase:'approach'};
+    }
     else e={type:'obstacle',sub:'crow_dive',x:GW+10,y:GY-40,vy:0,alive:true};
   }
   if(e){e.id=Math.random(); entities.push(e);}
@@ -1539,10 +1843,13 @@ function updateBridge(){
     if(dist>=bridgeStartDist) activateBridge();
     return;
   }
-  if(dist>=bridgeStartDist+BRIDGE_LEN){
+  if(dist>=bridgeStartDist+BRIDGE_LEN&&!bridgeDoneMsg){
+    bridgeDoneMsg=true; msg='橋を渡り切った！'; msgT=160;
+  }
+  // 最後の板が画面外に出るまで描画を継続（約34距離分バッファ）
+  if(dist>=bridgeStartDist+BRIDGE_LEN+34){
     bridgeActive=false; bridgeStartDist+=BRIDGE_EVERY;
-    bridgeWarnDone=false; bridgeDebris=[];
-    msg='橋を渡り切った！'; msgT=160;
+    bridgeWarnDone=false; bridgeDoneMsg=false; bridgeDebris=[];
     return;
   }
   if(grounded&&!invuln){
@@ -1573,6 +1880,9 @@ function updateBridge(){
   });
 }
 function drawBridgeBG(){
+  const s=STAGES[stageIdx];
+  const rs=(dist-bridgeStartDist)*BSCROLL;
+  const farBankX=rr(GW+(bridgeHoles.length+4)*BPLANK_PITCH-rs);
   // River water
   ctx.fillStyle='#0A1E3C'; ctx.fillRect(0,GY,GW,GH-GY);
   // Flow ripples
@@ -1588,6 +1898,12 @@ function drawBridgeBG(){
     const ry=GY+5+(i%3)*18;
     ctx.beginPath();ctx.ellipse(rr(rx+12),rr(ry),12,3,0,0,Math.PI*2);ctx.fill();
   }
+  // Far bank earth (slides in ~30 dist before bridge end)
+  if(farBankX<GW){
+    const fbx=Math.max(farBankX,0);
+    ctx.fillStyle=s.gnd; ctx.fillRect(fbx,GY,GW-fbx+4,GH-GY);
+    ctx.fillStyle=s.gndD; ctx.fillRect(fbx,GY,GW-fbx+4,5);
+  }
   // Bridge top handrail
   ctx.fillStyle='#2C1206'; ctx.fillRect(0,GY-30,GW,5);
   ctx.fillStyle='#5A2C10'; ctx.fillRect(0,GY-30,GW,2);
@@ -1598,7 +1914,6 @@ function drawBridgeBG(){
     ctx.fillStyle='#5A2C10'; ctx.fillRect(rr(rpx+1),GY-30,1,34);
   }
   // Planks
-  const rs=(dist-bridgeStartDist)*BSCROLL;
   for(let i=-4;i<bridgeHoles.length+4;i++){
     const sx=rr(GW+i*BPLANK_PITCH-rs);
     if(sx<-BPLANK_W||sx>GW+10) continue;
@@ -1629,12 +1944,32 @@ function drawBridgeBG(){
       }
     }
   }
-  // Solid ground left of first arriving plank
+  // Approach ground + post at bridge entrance
   const approachSolid=rr(GW-rs);
   if(approachSolid>0){
-    const s=STAGES[stageIdx];
     ctx.fillStyle=s.gnd; ctx.fillRect(0,GY,Math.min(approachSolid,GW),GH-GY);
     ctx.fillStyle=s.gndD; ctx.fillRect(0,GY,Math.min(approachSolid,GW),5);
+    if(approachSolid<GW-10){
+      const apx=rr(approachSolid-4);
+      ctx.fillStyle='#2C1206'; ctx.fillRect(apx,GY-48,8,48);
+      ctx.fillStyle='#5A2C10'; ctx.fillRect(apx+1,GY-48,3,48);
+      ctx.fillStyle='#7B4A1A'; ctx.fillRect(apx,GY-48,8,4);
+      ctx.fillStyle='#4A2808';
+      ctx.fillRect(apx+8,GY-42,14,4); ctx.fillRect(apx+8,GY-24,14,4);
+      ctx.fillStyle='#7B4A1A';
+      ctx.fillRect(apx+8,GY-42,14,1); ctx.fillRect(apx+8,GY-24,14,1);
+    }
+  }
+  // Far bank terminal pillar
+  if(farBankX<GW+16){
+    const fpx=rr(Math.max(farBankX,0)+2);
+    ctx.fillStyle='#2C1206'; ctx.fillRect(fpx,GY-52,8,52);
+    ctx.fillStyle='#5A2C10'; ctx.fillRect(fpx+1,GY-52,3,52);
+    ctx.fillStyle='#7B4A1A'; ctx.fillRect(fpx,GY-52,8,4);
+    ctx.fillStyle='#4A2808';
+    ctx.fillRect(fpx-14,GY-44,14,4); ctx.fillRect(fpx-14,GY-26,14,4);
+    ctx.fillStyle='#7B4A1A';
+    ctx.fillRect(fpx-14,GY-44,14,1); ctx.fillRect(fpx-14,GY-26,14,1);
   }
 }
 function drawBridgeDebris(){
@@ -1679,44 +2014,83 @@ function update(){
   const sp=speed;
   entities=entities.filter(e=>{
     if(!e.alive) return false;
-    if(e.sub==='crow_back')       e.x+=3.5;
-    else if(e.sub==='crow_dive')  e.x-=sp*0.95;
-    else if(e.sub==='crow_zigzag'){e.x-=sp*0.68; e.phase=(e.phase||0)+0.14; e.y=GY-88+Math.sin(e.phase)*46;}
+    if(e.sub==='crow_dive')       e.x-=sp*0.95;
+    else if(e.sub==='crow_zigzag'){e.x-=sp*0.52; e.phase=(e.phase||0)+0.13; e.y=GY-78+Math.sin(e.phase)*62;}
+    else if(e.sub==='tanuki'){
+      e.x-=sp*0.72;
+      e.bounce=(e.bounce||0)+0.28;
+      e.y=GY-30-Math.abs(Math.sin(e.bounce))*6;
+    }
     else if(e.sub==='oihagi')    {e.x-=sp*0.82; if(e.x-PX<200) e.phase='leap';}
+    else if(e.sub==='oihagi_sword'){
+      if(e.phase==='approach'){ e.x-=sp*0.72; if(e.x-PX<155) e.phase='thrust'; }
+      else { e.x-=sp*1.8; }
+    }
+    else if(e.sub==='oihagi_rush'){
+      e.phase=(e.phase||0)+0.16;
+      e.x-=sp*(0.55+Math.abs(Math.sin(e.phase))*1.15);
+    }
+    else if(e.sub==='oihagi_lunge'){
+      if(e.phase==='approach'){ e.x-=sp*0.6; if(e.x-PX<215) e.phase='charge'; }
+      else if(e.phase==='charge'){ e.chargeT=(e.chargeT||0)+1; if(e.chargeT>50) e.phase='lunge'; }
+      else { e.x-=sp*2.8; }
+    }
     else                          e.x-=sp*0.66;
 
     if(e.x>GW+150||e.x<-150||e.y>GH+80) return false;
 
     if(!invuln){
-      const m=8, px_=PX+m, py_=py+m, pw=20, ph=36;
+      const m=10, px_=PX+m, py_=py+m, pw=16, ph=30;
       if(e.type==='obstacle'){
         let ex,ey,ew,eh;
-        if(e.sub==='rock')           {ex=e.x+m;   ey=e.y+m;   ew=36-m*2; eh=16-m;}
-        else if(e.sub==='kite')      {ex=e.x+m;   ey=e.y+m;   ew=22-m;   eh=24-m;}
-        else if(e.sub==='oihagi')    {ex=e.x+4;   ey=e.y+10;  ew=20;     eh=40;  }
-        else                         {ex=e.x-8+m; ey=e.y-8+m; ew=20-m;   eh=16-m;}
+        if(e.sub==='rock')             {ex=e.x+m;   ey=e.y+m;   ew=36-m*2; eh=16-m;}
+        else if(e.sub==='kite')        {ex=e.x+m;   ey=e.y+m;   ew=22-m;   eh=24-m;}
+        else if(e.sub==='crow_zigzag') {ex=e.x-4;   ey=e.y-4;   ew=22;     eh=22;  }
+        else if(e.sub==='tanuki')      {ex=e.x-2;   ey=e.y-4;   ew=20;     eh=32;  }
+        else if(e.sub==='oihagi')      {ex=e.x+4;   ey=e.y+10;  ew=20;     eh=40;  }
+        else if(e.sub==='oihagi_sword'){
+          const sLen=e.phase==='thrust'?44:8;
+          ex=e.x+4-sLen; ey=e.y+18; ew=sLen+14; eh=16;
+        }
+        else if(e.sub==='oihagi_rush') {ex=e.x+4;   ey=e.y+10;  ew=20;     eh=40;  }
+        else if(e.sub==='oihagi_lunge'){
+          const lunge=e.phase==='lunge';
+          ex=lunge?e.x-12:e.x+4; ey=e.y+10; ew=lunge?34:20; eh=40;
+        }
+        else                           {ex=e.x-8+m; ey=e.y-8+m; ew=20-m;   eh=16-m;}
         if(aabb(px_,py_,pw,ph,ex,ey,ew,eh)){
-          e.alive=false; invuln=true; SFX.hit();
-          if(e.sub==='oihagi'){
-            // HP-1 + 全アイテム没収
-            lives=Math.max(0,lives-1); invT=180;
-            for(let oi=0;oi<5;oi++) if(items[oi]) lostItems[oi]=true;
-            items=[false,false,false,false,false];
-            msg='追い剥ぎに全部奪われた！HP-1'; msgT=300;
-            [440,330,220].forEach((f,i)=>setTimeout(()=>beep(f,0.18,'sawtooth',0.14),i*90));
-            if(lives<=0){state='gameover'; SFX.over();}
+          if(items&&items[4]&&e.sub&&e.sub.startsWith('oihagi')){
+            // 馬で追い剥ぎを踏み潰す
+            e.alive=false; invuln=true; invT=40;
+            msg='馬で追い剥ぎを踏み潰した！'; msgT=180;
+            [880,1100,1320].forEach((f,i)=>setTimeout(()=>beep(f,0.15,'square',0.10),i*60));
           } else {
-            // HP-1 + ランダム1アイテムロスト
-            lives=Math.max(0,lives-1); invT=110;
-            const owned=items.map((v,i)=>v?i:-1).filter(i=>i>=0);
-            if(owned.length>0){
-              const li=owned[Math.floor(Math.random()*owned.length)];
-              items[li]=false; lostItems[li]=true;
-              msg=CHAIN[li].name+'を落とした！HP-1'; msgT=200;
+            e.alive=false; invuln=true; SFX.hit();
+            if(items&&items[4]){
+              // 馬に乗っている→馬を失う（HP-1なし）
+              items[4]=false; lostItems[4]=true; invT=90;
+              msg='馬が驚いて逃げた！'; msgT=220;
+            } else if(e.sub&&e.sub.startsWith('oihagi')){
+              // HP-1 + 全アイテム没収
+              lives=Math.max(0,lives-1); invT=180;
+              for(let oi=0;oi<5;oi++) if(items[oi]) lostItems[oi]=true;
+              items=[false,false,false,false,false];
+              msg='追い剥ぎに全部奪われた！HP-1'; msgT=300;
+              [440,330,220].forEach((f,i)=>setTimeout(()=>beep(f,0.18,'sawtooth',0.14),i*90));
+              if(lives<=0){state='gameover'; SFX.over();}
             } else {
-              msg='HP-1！'; msgT=160;
+              // HP-1 + ランダム1アイテムロスト
+              lives=Math.max(0,lives-1); invT=110;
+              const owned=items.map((v,i)=>v?i:-1).filter(i=>i>=0);
+              if(owned.length>0){
+                const li=owned[Math.floor(Math.random()*owned.length)];
+                items[li]=false; lostItems[li]=true;
+                msg=CHAIN[li].name+'を落とした！HP-1'; msgT=200;
+              } else {
+                msg='HP-1！'; msgT=160;
+              }
+              if(lives<=0){state='gameover'; SFX.over();}
             }
-            if(lives<=0){state='gameover'; SFX.over();}
           }
         }
       } else if(e.type==='npc'){
@@ -1752,24 +2126,22 @@ function update(){
         if(aabb(px_,py_,pw,ph, e.x+2,e.y+2,16,16)){
           e.alive=false;
           const ci=e.chainIdx;
-          const hr=items.reduce((m,v,i)=>v?i:m,-1);
           if(items[ci]){
             npcPopMsg=CHAIN[ci].name+'はもう持っている！';
-          } else if(hr>ci){
-            // 最高ランク未満: 無償入手
+          } else {
             items[ci]=true; lostItems[ci]=false;
             npcPopMsg=CHAIN[ci].name+' を拾った！';
-          } else {
-            // 上位アイテム: NPCと交換が必要
-            npcPopMsg=CHAIN[ci].name+'はNPCと交換しよう！';
           }
           npcPopT=200; SFX.get();
         }
-      } else if(e.type==='heart'){
-        if(aabb(px_,py_,pw,ph, e.x+m,e.y+m,14,15)){
-          e.alive=false; lives=Math.min(5,lives+1);
-          msg='いのちが回復した！'; msgT=150; SFX.get();
-        }
+      }
+    }
+    // ハート取得（無敵中でも拾える）
+    if(e.type==='heart'){
+      if(aabb(PX+2,py+4,28,40, e.x,e.y,20,26)){
+        e.alive=false;
+        if(lives<5){lives++; msg='+1♥ いのちが回復した！'; msgT=160; SFX.heal();}
+        else {msg='HP満タン！'; msgT=100;}
       }
     }
     return e.alive;
@@ -1880,12 +2252,6 @@ function drawHUD(){
   // Goal indicator at bottom
   ctx.fillStyle='rgba(220,180,0,0.40)'; ctx.fillRect(0,GH-4,rr(GW*Math.min(dist,GOAL_DIST)/GOAL_DIST),4);
   ctx.fillStyle='rgba(240,200,60,0.80)'; ctx.fillRect(rr(GW*Math.min(dist,GOAL_DIST)/GOAL_DIST)-1,GH-6,2,6);
-  // Crow-back warning
-  const hasCB=entities.some(e=>e.sub==='crow_back'&&e.x<PX-5&&e.x>-30);
-  if(hasCB&&Math.floor(frame/7)%2===0){
-    ctx.fillStyle='#FF6000'; ctx.font='bold 14px monospace';
-    ctx.fillText('⚠ 後ろ！',4,GH/2);
-  }
 }
 
 function drawMessage(){
@@ -2143,11 +2509,23 @@ function loop(){
         else if(e.sub==='rock')           drawRock(e.x,e.y);
         else if(e.sub==='kite')           drawKite(e.x,e.y,frame);
         else if(e.sub&&e.sub.startsWith('crow')) drawCrow(e.x,e.y,e.sub,frame);
-        else if(e.sub==='oihagi'){
+        else if(e.sub&&e.sub.startsWith('oihagi')){
           const ecx=rr(e.x+15);
           ctx.save();
           ctx.translate(ecx,GY); ctx.scale(ESCALE,ESCALE); ctx.translate(-ecx,-GY);
-          drawOihagi(e.x,e.y,e.phase,frame);
+          const oPhase=(e.sub==='oihagi')?e.phase:(e.phase==='lunge'||e.phase==='thrust')?'leap':'grin';
+          const oEY=e.phase==='charge'?e.y+5:e.y;
+          drawOihagi(e.x,oEY,oPhase,frame);
+          if(e.sub==='oihagi_sword')drawOihagiSword(e.x,e.y,e.phase==='thrust',frame);
+          if(e.sub==='oihagi_rush') drawOihagiRush(e.x,e.y,frame);
+          if(e.sub==='oihagi_lunge')drawOihagiLunge(e.x,e.y,e.phase,e.chargeT||0);
+          ctx.restore();
+        }
+        else if(e.sub==='tanuki'){
+          const tcx=rr(e.x+8);
+          ctx.save();
+          ctx.translate(tcx,GY); ctx.scale(ESCALE,ESCALE); ctx.translate(-tcx,-GY);
+          drawTanuki(e.x,e.y,frame);
           ctx.restore();
         }
         else if(e.sub==='heart')          drawHeart(e.x,e.y,frame);
@@ -2183,7 +2561,7 @@ function doAction(){
   if(state==='ending') return; // エンディング中は入力無効
   if(state==='clear'){state='start'; return;}
   if(state!=='playing'){initGame(); return;}
-  if(grounded){vy=JF; grounded=false; SFX.jump();}
+  if(grounded){vy=(items&&items[4])?JF*1.6:JF; grounded=false; SFX.jump();}
 }
 document.addEventListener('keydown',e=>{
   if(e.code==='Space'||e.code==='ArrowUp'){e.preventDefault(); doAction();}
