@@ -1740,12 +1740,147 @@ function drawOihagiLunge(ex,ey,phase,chargeT){
 }
 
 // ══════════════════════════════════════════════════════════
+// DRAW: PLATFORMS（米俵・塀・荷車）
+// ══════════════════════════════════════════════════════════
+function drawDawara(x,y,stacked,sa,crumbling,ct){
+  sa=sa||0; ct=ct||0;
+  const shake=crumbling?Math.round(Math.sin(ct*0.7)*Math.min(ct*0.05,2.5)):0;
+  if(stacked&&sa<50){
+    const lean=crumbling?Math.round(Math.sin(ct*0.42+1)*ct*0.04):0;
+    const tx=rr(x+3+shake+lean),ty=rr(y+sa);
+    ctx.fillStyle='#1A1006'; ctx.fillRect(tx-1,ty-1,32,30);
+    ctx.fillStyle='#C8A030'; ctx.fillRect(tx,ty,30,28);
+    ctx.fillStyle='#E0C040'; ctx.fillRect(tx,ty,30,7);
+    ctx.fillStyle='#A88020'; ctx.fillRect(tx,ty+21,30,7);
+    ctx.fillStyle='#3A1806'; ctx.fillRect(tx+8,ty,3,28); ctx.fillRect(tx+19,ty,3,28);
+    ctx.fillStyle='#5A2C0E'; ctx.fillRect(tx+9,ty,1,28); ctx.fillRect(tx+20,ty,1,28);
+    ctx.fillStyle='#B89028';
+    for(let i=0;i<3;i++){ctx.fillRect(tx+1,ty+6+i*7,7,1);ctx.fillRect(tx+13,ty+6+i*7,7,1);}
+  }
+  const bx=rr(x+shake),by=rr(stacked?y+28+sa:y+sa);
+  const bh=Math.min(32,GY-by);
+  if(bh>0){
+    ctx.fillStyle='#1A1006'; ctx.fillRect(bx-1,by-1,38,bh+2);
+    ctx.fillStyle='#C8A030'; ctx.fillRect(bx,by,36,bh);
+    if(bh>7){ctx.fillStyle='#E0C040'; ctx.fillRect(bx,by,36,7);}
+    if(bh>8){ctx.fillStyle='#A88020'; ctx.fillRect(bx,by+Math.max(bh-8,0),36,Math.min(8,bh));}
+    ctx.fillStyle='#3A1806'; ctx.fillRect(bx+10,by,4,bh); ctx.fillRect(bx+22,by,4,bh);
+    ctx.fillStyle='#5A2C0E'; ctx.fillRect(bx+11,by,2,bh); ctx.fillRect(bx+23,by,2,bh);
+    ctx.fillStyle='#B89028';
+    for(let i=0;i<3;i++){
+      if(by+7+i*8<GY){ctx.fillRect(bx+1,by+7+i*8,8,1);ctx.fillRect(bx+15,by+7+i*8,7,1);ctx.fillRect(bx+27,by+7+i*8,7,1);}
+    }
+  }
+  ctx.fillStyle='rgba(0,0,0,0.22)'; ctx.fillRect(rr(x+4),GY,28,4);
+}
+
+function drawHei(x,y,w,h){
+  const bodyH=Math.min(h,GY-y);
+  if(bodyH<=0) return;
+  ctx.fillStyle='#1A1006'; ctx.fillRect(rr(x-1),rr(y-1),w+2,bodyH+3);
+  ctx.fillStyle='#D8D0C0'; ctx.fillRect(rr(x),rr(y),w,bodyH);
+  ctx.fillStyle='rgba(0,0,0,0.14)';
+  for(let iy=y+18;iy<y+bodyH;iy+=18) ctx.fillRect(rr(x),rr(iy),w,1);
+  for(let row=0;row*18<bodyH;row++){
+    const off=(row%2)*28;
+    for(let ix=x+off;ix<x+w;ix+=56) ctx.fillRect(rr(ix),rr(y+row*18),1,18);
+  }
+  ctx.fillStyle='rgba(255,255,255,0.18)';
+  for(let row=0;row*18<bodyH;row++){
+    const off=(row%2)*28;
+    for(let ix=x+off;ix<x+w;ix+=56) ctx.fillRect(rr(ix+1),rr(y+row*18+2),12,2);
+  }
+  ctx.fillStyle='#3A2210'; ctx.fillRect(rr(x-2),rr(y-9),w+4,11);
+  ctx.fillStyle='#5A3820'; ctx.fillRect(rr(x-2),rr(y-9),w+4,4);
+  ctx.fillStyle='#7A5030'; ctx.fillRect(rr(x-2),rr(y-9),w+4,1);
+  ctx.fillStyle='#2A1A08';
+  for(let ix=x;ix<x+w;ix+=20) ctx.fillRect(rr(ix),rr(y-9),1,11);
+  ctx.fillStyle='#5A3810'; ctx.fillRect(rr(x-2),rr(y+bodyH),w+4,5);
+  ctx.fillStyle='#3A2008'; ctx.fillRect(rr(x-2),rr(y+bodyH+3),w+4,2);
+  ctx.fillStyle='rgba(0,0,0,0.25)'; ctx.fillRect(rr(x+6),GY,w-10,4);
+}
+
+function drawNiguruma(x,y){
+  const bedH=10,frameH=6;
+  const wy=y+bedH+frameH;
+  const wh=Math.max(4,GY-wy-2);
+  ctx.fillStyle='rgba(0,0,0,0.22)'; ctx.fillRect(rr(x+8),GY,54,4);
+  function drawWheel(wx){
+    ctx.fillStyle='#1A1006'; ctx.fillRect(rr(wx),rr(wy-2),18,wh+4);
+    ctx.fillStyle='#5A3010'; ctx.fillRect(rr(wx+2),rr(wy),14,wh);
+    ctx.fillStyle='#3A1E08';
+    ctx.fillRect(rr(wx+2),rr(wy+Math.round(wh/2)-1),14,2);
+    ctx.fillRect(rr(wx+7),rr(wy),4,wh);
+    ctx.fillStyle='#8A5020'; ctx.fillRect(rr(wx+6),rr(wy+Math.round(wh/2)-2),6,4);
+    ctx.fillStyle='#2A1A08';
+    ctx.fillRect(rr(wx+2),rr(wy),14,2); ctx.fillRect(rr(wx+2),rr(wy+wh-2),14,2);
+    ctx.fillRect(rr(wx+2),rr(wy),2,wh); ctx.fillRect(rr(wx+14),rr(wy),2,wh);
+  }
+  drawWheel(x+6); drawWheel(x+46);
+  ctx.fillStyle='#3A2010'; ctx.fillRect(rr(x+22),rr(wy+Math.round(wh/2)-1),26,2);
+  ctx.fillStyle='#1A1006'; ctx.fillRect(rr(x-1),rr(y+bedH-1),72,frameH+2);
+  ctx.fillStyle='#3A1C08'; ctx.fillRect(rr(x),rr(y+bedH),70,frameH);
+  ctx.fillStyle='#5A3010'; ctx.fillRect(rr(x),rr(y+bedH),70,2);
+  ctx.fillStyle='#2A1408';
+  ctx.fillRect(rr(x+4),rr(y+bedH),4,frameH); ctx.fillRect(rr(x+62),rr(y+bedH),4,frameH);
+  ctx.fillRect(rr(x+32),rr(y+bedH),6,frameH);
+  ctx.fillStyle='#1A1006'; ctx.fillRect(rr(x-1),rr(y-1),72,bedH+2);
+  ctx.fillStyle='#7A4020'; ctx.fillRect(rr(x),rr(y),70,bedH);
+  ctx.fillStyle='#9A6030';
+  for(let i=0;i<4;i++) ctx.fillRect(rr(x),rr(y+2+i*2),70,1);
+  ctx.fillStyle='#5A2808';
+  for(let i=1;i<6;i++) ctx.fillRect(rr(x+i*11),rr(y),1,bedH);
+  ctx.fillStyle='#4A2808';
+  ctx.fillRect(rr(x),rr(y-4),3,bedH+4); ctx.fillRect(rr(x+67),rr(y-4),3,bedH+4);
+  ctx.fillRect(rr(x+67),rr(y-8),3,10);
+  ctx.fillStyle='#1A1006'; ctx.fillRect(rr(x-22),rr(y+3),23,5);
+  ctx.fillStyle='#5A3010'; ctx.fillRect(rr(x-21),rr(y+4),21,3);
+  ctx.fillStyle='#1A1006'; ctx.fillRect(rr(x-26),rr(y),6,10);
+  ctx.fillStyle='#7A5018'; ctx.fillRect(rr(x-25),rr(y+1),4,8);
+}
+
+function drawPlatformItem(cx,y,item,fr){
+  const bx=rr(cx-10+Math.sin(fr*0.10)*2);
+  const by=rr(y-30+Math.sin(fr*0.13)*3);
+  if(item.type==='heart'){
+    drawHeart(bx,by,fr);
+  } else {
+    const c=CHAIN[item.chainIdx];
+    ctx.fillStyle=c.col+'44'; ctx.fillRect(bx-5,by-5,30,30);
+    ctx.fillStyle='rgba(10,6,0,0.90)'; ctx.fillRect(bx,by,20,20);
+    ctx.fillStyle=c.col;
+    ctx.fillRect(bx,by,20,2); ctx.fillRect(bx,by+18,20,2);
+    ctx.fillRect(bx,by,2,20); ctx.fillRect(bx+18,by,2,20);
+    ctx.save(); ctx.translate(bx+10,by+11); drawChainIcon(item.chainIdx,0.52); ctx.restore();
+  }
+}
+
+function drawPlatforms(){
+  for(const p of platforms){
+    if(!p.alive) continue;
+    if(p.sub==='dawara')
+      drawDawara(p.x,p.y,false,p.sinkAmt,p.crumbling,p.crumbleT);
+    else if(p.sub==='dawara2'||p.sub==='dawara_crumble')
+      drawDawara(p.x,p.y,true,p.sinkAmt,p.crumbling,p.crumbleT);
+    else if(p.sub==='hei'||p.sub==='hei_tall')
+      drawHei(p.x,p.y,p.w,p.h);
+    else if(p.sub==='niguruma')
+      drawNiguruma(p.x,p.y);
+    if(p.hasItem&&!p.hasItem.collected){
+      const ptop=p.y+(p.sinkAmt||0);
+      drawPlatformItem(p.x+p.w/2,ptop,p.hasItem,frame);
+    }
+  }
+}
+
+// ══════════════════════════════════════════════════════════
 // GAME STATE
 // ══════════════════════════════════════════════════════════
 let state='start';
 let dist,speed,py,vy,grounded,lives,invuln,invT,frame,entities,spawnD,stageIdx,msg,msgT;
 let bridgeActive,bridgeStartDist,bridgeHoles,bridgeDebris,bridgeWarnDone,bridgeDoneMsg;
 let items,lostItems,clearRank,npcPopT,npcPopMsg;
+let platforms,platSpawnD;
 let endT,endPlayerX,endFade,endMansionX; // ending cinematic
 
 function initGame(){
@@ -1757,6 +1892,7 @@ function initGame(){
   items=[true,false,false,false,false];
   lostItems=[false,false,false,false,false];
   clearRank=4; npcPopT=0; npcPopMsg='';
+  platforms=[]; platSpawnD=0;
   endT=0; endPlayerX=PX; endFade=0; endMansionX=GW+300;
   state='playing';
 }
@@ -1812,6 +1948,84 @@ function spawnEntity(){
 
 function aabb(ax,ay,aw,ah,bx,by,bw,bh){
   return!(ax+aw<bx||ax>bx+bw||ay+ah<by||ay>by+bh);
+}
+
+// ══════════════════════════════════════════════════════════
+// PLATFORM SYSTEM（足場ギミック）
+// ══════════════════════════════════════════════════════════
+function spawnPlatforms(){
+  if(bridgeActive) return;
+  if(dist-platSpawnD<400+Math.random()*300) return;
+  platSpawnD=dist;
+  const r=Math.random();
+  let newPlats;
+  if(r<0.18)      newPlats=[{sub:'dawara',        x:GW+30,y:GY-32, w:36, h:32}];
+  else if(r<0.28) newPlats=[{sub:'dawara_crumble',x:GW+30,y:GY-60, w:36, h:60}];
+  else if(r<0.42) newPlats=[{sub:'dawara2',        x:GW+30,y:GY-60, w:36, h:60}];
+  else if(r<0.58) newPlats=[{sub:'hei',            x:GW+20,y:GY-68, w:100,h:68}];
+  else if(r<0.68) newPlats=[{sub:'hei_tall',       x:GW+20,y:GY-112,w:80, h:112}];
+  else if(r<0.78) newPlats=[{sub:'niguruma',       x:GW+20,y:GY-50, w:70, h:50}];
+  else if(r<0.88) newPlats=[
+    {sub:'dawara', x:GW+20,y:GY-32,w:36,h:32},
+    {sub:'dawara2',x:GW+90,y:GY-60,w:36,h:60},
+  ];
+  else newPlats=[
+    {sub:'hei',     x:GW+20, y:GY-68, w:80, h:68},
+    {sub:'hei_tall',x:GW+120,y:GY-112,w:80, h:112},
+  ];
+  for(const pd of newPlats){
+    platforms.push({...pd,alive:true,crumbling:false,crumbleT:0,sinkAmt:0,
+      hasItem:Math.random()<0.65?{
+        type:Math.random()<0.22?'heart':'drop',
+        chainIdx:Math.floor(Math.random()*5),
+        collected:false,
+      }:null
+    });
+  }
+}
+
+function updatePlatforms(){
+  spawnPlatforms();
+  platforms=platforms.filter(p=>{
+    if(!p.alive) return false;
+    p.x-=speed*0.66;
+    // Crumble animation
+    if(p.crumbling){
+      p.crumbleT++;
+      if(p.crumbleT>30) p.sinkAmt=Math.min(p.h,(p.crumbleT-30)*1.2);
+      if(p.sinkAmt>=p.h){p.alive=false;return false;}
+    }
+    // Player landing
+    if(!grounded&&vy>=0){
+      const ptop=p.y+(p.sinkAmt||0);
+      if(py+46>=ptop&&py+46<=ptop+vy+8&&PX+20>p.x&&PX+4<p.x+p.w){
+        py=ptop-46; vy=0; grounded=true;
+        if(p.sub==='dawara_crumble'&&!p.crumbling){
+          p.crumbling=true;
+          msg='米俵が崩れる！'; msgT=120;
+          beep(180,0.30,'sawtooth',0.12);
+        }
+      }
+    }
+    // Item pickup
+    if(p.hasItem&&!p.hasItem.collected){
+      const ptop=p.y+(p.sinkAmt||0);
+      const iy=ptop-30;
+      if(py+10<iy+20&&py+46>iy&&PX+20>p.x&&PX+4<p.x+p.w){
+        p.hasItem.collected=true;
+        if(p.hasItem.type==='heart'){
+          if(lives<5){lives++;msg='+1♥ いのちが回復した！';msgT=160;SFX.heal();}
+          else{msg='HP満タン！';msgT=100;}
+        } else {
+          const ci=p.hasItem.chainIdx;
+          if(items[ci]){npcPopMsg=CHAIN[ci].name+'はもう持っている！';}
+          else{items[ci]=true;lostItems[ci]=false;npcPopMsg=CHAIN[ci].name+' を拾った！';}
+          npcPopT=200; SFX.get();
+        }
+      }
+    }
+    return p.x>-200;
+  });
 }
 
 // ══════════════════════════════════════════════════════════
@@ -1988,6 +2202,16 @@ function update(){
   for(let i=STAGES.length-1;i>=0;i--){if(dist>=STAGES[i].minD){si=i;break;}}
   stageIdx=si;
 
+  // Release player if platform scrolled away
+  if(grounded&&py<GY-46){
+    let ok=false;
+    for(const p of platforms){
+      if(!p.alive) continue;
+      const ptop=p.y+(p.sinkAmt||0);
+      if(Math.abs(py+46-ptop)<=8&&PX+20>p.x&&PX+4<p.x+p.w){ok=true;py=ptop-46;break;}
+    }
+    if(!ok) grounded=false;
+  }
   if(!grounded){vy+=G; py+=vy;}
   if(py>=GY-46){py=GY-46; vy=0; grounded=true;}
 
@@ -2011,6 +2235,7 @@ function update(){
 
   spawnEntity();
   updateBridge();
+  updatePlatforms();
   const sp=speed;
   entities=entities.filter(e=>{
     if(!e.alive) return false;
@@ -2502,6 +2727,7 @@ function loop(){
 
     if(state==='playing'){
       update();
+      drawPlatforms();
       for(const e of entities){
         if(!e.alive) continue;
         if(e.type==='npc')                drawNPC(e.x,e.y,e.chainIdx,frame);
