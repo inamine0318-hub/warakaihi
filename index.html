@@ -2491,6 +2491,13 @@ function update(){
       const ptop=p.y+(p.sinkAmt||0);
       if(Math.abs(py+46-ptop)<=8&&PX+20>p.x&&PX+4<p.x+p.w){ok=true;py=ptop-46;break;}
     }
+    if(!ok&&bridgeActive&&bridgeLogs&&bridgeLogs.length){
+      const rs=(dist-bridgeStartDist)*BSCROLL;
+      for(const log of bridgeLogs){
+        const lx=rr(GW+log.bpos-rs);
+        if(PX+22>lx&&PX+4<lx+36&&Math.abs(py+46-log.y)<=8){ok=true;break;}
+      }
+    }
     if(!ok) grounded=false;
   }
   if(!grounded){vy+=G; py+=vy;}
