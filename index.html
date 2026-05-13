@@ -2130,7 +2130,7 @@ let platforms,platSpawnD,platZigzag;
 let stageTransT,prevStageIdx,kickT,kickHoldT,kickHolding;
 let goalWarn1,goalWarn2,paused;
 let horseFlashT,clearParts;
-let doubleJumped,kiteActive,kiteT,projectiles,attackCooldown,doubleJumpTaught,kiteTaught;
+let doubleJumped,kiteActive,kiteT,projectiles,attackCooldown,doubleJumpTaught,kiteTaught,attackTaught;
 function saveBest(){
   try{
     const b=JSON.parse(localStorage.getItem('warashibe_best')||'null');
@@ -2157,7 +2157,7 @@ function initGame(){
   stageTransT=0; prevStageIdx=0; kickT=0; kickHoldT=0; kickHolding=false;
   platforms=[]; platSpawnD=0; platZigzag=0;
   endT=0; endPlayerX=PX; endFade=0; endMansionX=GW+300;
-  doubleJumped=false; kiteActive=false; kiteT=0; projectiles=[]; attackCooldown=0; doubleJumpTaught=false; kiteTaught=false;
+  doubleJumped=false; kiteActive=false; kiteT=0; projectiles=[]; attackCooldown=0; doubleJumpTaught=false; kiteTaught=false; attackTaught=false;
   state='playing';
   BGM.start();
 }
@@ -2166,6 +2166,10 @@ function checkDoubleJumpUnlock(){
   if(!doubleJumpTaught&&items.filter(Boolean).length>=2){
     doubleJumpTaught=true;
     msg='荷物2個！空中でもう一度タップで2段ジャンプ！'; msgT=300;
+  }
+  if(!attackTaught&&items.filter(Boolean).length>=2){
+    attackTaught=true;
+    setTimeout(()=>{if(state==='playing'&&!msg){msg='右下ボタンで石を投げて障害物を壊せる！';msgT=200;}},3500);
   }
 }
 
