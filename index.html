@@ -2130,7 +2130,7 @@ let platforms,platSpawnD,platZigzag;
 let stageTransT,prevStageIdx,kickT,kickHoldT,kickHolding;
 let goalWarn1,goalWarn2,paused;
 let horseFlashT,clearParts;
-let doubleJumped,kiteActive,kiteT,projectiles,attackCooldown;
+let doubleJumped,kiteActive,kiteT,projectiles,attackCooldown,doubleJumpTaught;
 function saveBest(){
   try{
     const b=JSON.parse(localStorage.getItem('warashibe_best')||'null');
@@ -2157,9 +2157,16 @@ function initGame(){
   stageTransT=0; prevStageIdx=0; kickT=0; kickHoldT=0; kickHolding=false;
   platforms=[]; platSpawnD=0; platZigzag=0;
   endT=0; endPlayerX=PX; endFade=0; endMansionX=GW+300;
-  doubleJumped=false; kiteActive=false; kiteT=0; projectiles=[]; attackCooldown=0;
+  doubleJumped=false; kiteActive=false; kiteT=0; projectiles=[]; attackCooldown=0; doubleJumpTaught=false;
   state='playing';
   BGM.start();
+}
+
+function checkDoubleJumpUnlock(){
+  if(!doubleJumpTaught&&items.filter(Boolean).length>=2){
+    doubleJumpTaught=true;
+    msg='荷物2個！空中でもう一度タップで2段ジャンプ！'; msgT=300;
+  }
 }
 
 function spawnEntity(){
@@ -2296,7 +2303,7 @@ function updatePlatforms(){
           const ci=p.hasItem.chainIdx;
           const hr=items.reduce((m,v,i)=>v?i:m,-1);
           if(items[ci]){npcPopMsg=CHAIN[ci].name+'はもう持っている！';}
-          else if(hr>=ci-1){items[ci]=true;lostItems[ci]=false;npcPopMsg=CHAIN[ci].name+' を拾った！';}
+          else if(hr>=ci-1){items[ci]=true;lostItems[ci]=false;npcPopMsg=CHAIN[ci].name+' を拾った！';checkDoubleJumpUnlock();}
           else{npcPopMsg='まだ手に入らない…';}
           npcPopT=200; SFX.get();
         }
@@ -2821,6 +2828,7 @@ function update(){
             items[ci]=true; lostItems[ci]=false;
             if(ci===4){horseFlashT=90;SFX.neigh();}
             npcPopMsg=CHAIN[ci].name+'をどうぞ！'; npcPopPMsg='え！ありがとう！';
+            checkDoubleJumpUnlock();
           } else {
             npcPopMsg=(['わらがあれば…','わらがあれば…','アブがあれば…','みかんがあれば…','布があれば…'])[ci]||'まだ早い…';
             npcPopPMsg=(['くぅ…もう少し！','くぅ…もう少し！','もう少し…！','布…欲しいなぁ！','馬が欲しい！！'])[ci]||'もう少し！';
@@ -2838,6 +2846,7 @@ function update(){
             items[ci]=true; lostItems[ci]=false;
             if(ci===4){horseFlashT=90;SFX.neigh();}
             npcPopPMsg=CHAIN[ci].name+'を拾った！';
+            checkDoubleJumpUnlock();
           } else {
             npcPopPMsg='まだ手に入らない…';
           }
@@ -3701,14 +3710,14 @@ function doAction(){
 function doAttack(){
   if(state!=='playing'||paused) return;
   if(!items||items.filter(Boolean).length<2||attackCooldown>0) return;
-  // ランダムで2個アイテムロスト
+  // ランダムで1個アイテムロスト
   const owned=items.map((v,i)=>v?i:-1).filter(i=>i>=0);
   for(let i=owned.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[owned[i],owned[j]]=[owned[j],owned[i]];}
-  owned.slice(0,2).forEach(i=>{items[i]=false; lostItems[i]=true;});
+  owned.slice(0,1).forEach(i=>{items[i]=false; lostItems[i]=true;});
   projectiles.push({x:PX+24,y:py+16,vy:-3.5});
   attackCooldown=80;
   beep(280,0.07,'sawtooth',0.14); setTimeout(()=>beep(380,0.05,'square',0.10),35);
-  msg='石を投げた！荷物2個ロスト'; msgT=140;
+  msg='石を投げた！荷物1個ロスト'; msgT=140;
 }
 document.addEventListener('keydown',e=>{
   if(e.code==='Space'||e.code==='ArrowUp'){e.preventDefault(); doAction();}
