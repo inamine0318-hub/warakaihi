@@ -985,9 +985,54 @@ function drawPlayerOnHorse(py,frame,invuln,lv){
   if(lv>0) drawItemIcon(rr(x+20),rr(py+6),lv,0.52);
 }
 
+function drawKiteParachute(py,frame){
+  const x=PX;
+  // 浮遊タイマーに応じた揺れ
+  const sway=Math.sin(frame*0.07)*5;
+  const bob =Math.sin(frame*0.11)*3;
+  // 凧本体（プレイヤーの斜め上）
+  const kx=rr(x+2+sway), ky=rr(py-52+bob);
+  // 糸（両肩から凧へ）
+  ctx.strokeStyle='#5A3010'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(rr(x+6), rr(py+10)); ctx.lineTo(rr(kx+13),rr(ky+30)); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(rr(x+18),rr(py+10)); ctx.lineTo(rr(kx+13),rr(ky+30)); ctx.stroke();
+  // 凧ボディ（小さめダイヤ）
+  ctx.fillStyle='#D02000';
+  ctx.beginPath();
+  ctx.moveTo(rr(kx+13),rr(ky));
+  ctx.lineTo(rr(kx+24),rr(ky+15));
+  ctx.lineTo(rr(kx+13),rr(ky+30));
+  ctx.lineTo(rr(kx+2), rr(ky+15));
+  ctx.closePath(); ctx.fill();
+  // 内側模様
+  ctx.fillStyle='#F8E000';
+  ctx.beginPath();
+  ctx.moveTo(rr(kx+13),rr(ky+4));
+  ctx.lineTo(rr(kx+20),rr(ky+15));
+  ctx.lineTo(rr(kx+13),rr(ky+26));
+  ctx.lineTo(rr(kx+6), rr(ky+15));
+  ctx.closePath(); ctx.fill();
+  // 鬼目
+  ctx.fillStyle='#D02000';
+  ctx.fillRect(rr(kx+8), rr(ky+12),2,2);
+  ctx.fillRect(rr(kx+14),rr(ky+12),2,2);
+  // しっぽ
+  const tc=['#F8E000','#E04000','#40A0E0'];
+  for(let i=0;i<3;i++){
+    const ts=Math.sin(frame*0.18+i*1.1)*8;
+    ctx.strokeStyle=tc[i]; ctx.lineWidth=1.5;
+    ctx.beginPath();
+    ctx.moveTo(rr(kx+13),rr(ky+30));
+    ctx.lineTo(rr(kx+13+ts),rr(ky+42+i*10));
+    ctx.stroke();
+  }
+}
+
 function drawPlayer(py,frame,invuln,lv){
   if(items&&items[4]){drawPlayerOnHorse(py,frame,invuln,lv);return;}
   if(invuln&&Math.floor(frame/5)%2===0) return;
+  // 凧浮遊中：先に凧を描画（プレイヤーの後ろに見えるよう）
+  if(kiteActive) drawKiteParachute(py,frame);
   const x=PX;
   const isJump=!grounded;
   // 走りアニメ: 短足ぷかぷか [flx,fly, blx,bly, bob, fay,bay]
