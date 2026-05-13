@@ -987,43 +987,47 @@ function drawPlayerOnHorse(py,frame,invuln,lv){
 
 function drawKiteParachute(py,frame){
   const x=PX;
-  // 浮遊タイマーに応じた揺れ
-  const sway=Math.sin(frame*0.07)*5;
-  const bob =Math.sin(frame*0.11)*3;
-  // 凧本体（プレイヤーの斜め上）
-  const kx=rr(x+2+sway), ky=rr(py-52+bob);
-  // 糸（両肩から凧へ）
-  ctx.strokeStyle='#5A3010'; ctx.lineWidth=1.5;
-  ctx.beginPath(); ctx.moveTo(rr(x+6), rr(py+10)); ctx.lineTo(rr(kx+13),rr(ky+30)); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(rr(x+18),rr(py+10)); ctx.lineTo(rr(kx+13),rr(ky+30)); ctx.stroke();
-  // 凧ボディ（小さめダイヤ）
-  ctx.fillStyle='#D02000';
+  const sway=Math.sin(frame*0.08)*6;
+  const bob =Math.sin(frame*0.12)*3;
+  const cx=rr(x+12+sway), cy=rr(py-50+bob); // 凧の中心
+  // 糸（両肩→凧下端）
+  ctx.strokeStyle='#A09070'; ctx.lineWidth=1.2;
+  ctx.beginPath(); ctx.moveTo(rr(x+7), rr(py+8)); ctx.lineTo(rr(cx-10),rr(cy+14)); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(rr(x+19),rr(py+8)); ctx.lineTo(rr(cx+10),rr(cy+14)); ctx.stroke();
+  // 凧4色ひし形
+  const col=['#56C8FF','#FFE840','#FF8890','#98E870'];
+  ctx.fillStyle=col[0];
+  ctx.beginPath(); ctx.moveTo(rr(cx),rr(cy-14)); ctx.lineTo(rr(cx+12),rr(cy)); ctx.lineTo(rr(cx),rr(cy)); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(rr(cx),rr(cy-14)); ctx.lineTo(rr(cx-12),rr(cy)); ctx.lineTo(rr(cx),rr(cy)); ctx.closePath(); ctx.fill();
+  ctx.fillStyle=col[1];
+  ctx.beginPath(); ctx.moveTo(rr(cx-12),rr(cy)); ctx.lineTo(rr(cx),rr(cy)); ctx.lineTo(rr(cx),rr(cy+14)); ctx.closePath(); ctx.fill();
+  ctx.fillStyle=col[2];
+  ctx.beginPath(); ctx.moveTo(rr(cx+12),rr(cy)); ctx.lineTo(rr(cx),rr(cy)); ctx.lineTo(rr(cx),rr(cy+14)); ctx.closePath(); ctx.fill();
+  // 輪郭
+  ctx.strokeStyle='rgba(0,0,0,0.20)'; ctx.lineWidth=1;
   ctx.beginPath();
-  ctx.moveTo(rr(kx+13),rr(ky));
-  ctx.lineTo(rr(kx+24),rr(ky+15));
-  ctx.lineTo(rr(kx+13),rr(ky+30));
-  ctx.lineTo(rr(kx+2), rr(ky+15));
-  ctx.closePath(); ctx.fill();
-  // 内側模様
-  ctx.fillStyle='#F8E000';
-  ctx.beginPath();
-  ctx.moveTo(rr(kx+13),rr(ky+4));
-  ctx.lineTo(rr(kx+20),rr(ky+15));
-  ctx.lineTo(rr(kx+13),rr(ky+26));
-  ctx.lineTo(rr(kx+6), rr(ky+15));
-  ctx.closePath(); ctx.fill();
-  // 鬼目
-  ctx.fillStyle='#D02000';
-  ctx.fillRect(rr(kx+8), rr(ky+12),2,2);
-  ctx.fillRect(rr(kx+14),rr(ky+12),2,2);
-  // しっぽ
-  const tc=['#F8E000','#E04000','#40A0E0'];
-  for(let i=0;i<3;i++){
-    const ts=Math.sin(frame*0.18+i*1.1)*8;
-    ctx.strokeStyle=tc[i]; ctx.lineWidth=1.5;
+  ctx.moveTo(rr(cx),rr(cy-14)); ctx.lineTo(rr(cx+12),rr(cy));
+  ctx.lineTo(rr(cx),rr(cy+14)); ctx.lineTo(rr(cx-12),rr(cy));
+  ctx.closePath(); ctx.stroke();
+  // 十字骨組み
+  ctx.strokeStyle='rgba(255,255,255,0.30)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(rr(cx),rr(cy-14)); ctx.lineTo(rr(cx),rr(cy+14)); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(rr(cx-12),rr(cy)); ctx.lineTo(rr(cx+12),rr(cy)); ctx.stroke();
+  // 顔
+  ctx.fillStyle='#335577';
+  ctx.beginPath(); ctx.arc(rr(cx-3),rr(cy-2),1.5,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(rr(cx+3),rr(cy-2),1.5,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle='#335577'; ctx.lineWidth=1.2;
+  ctx.beginPath(); ctx.arc(rr(cx),rr(cy),2.5,0.2,Math.PI-0.2); ctx.stroke();
+  // リボンしっぽ（4本・カラフル・大きく揺れる）
+  const rc=['#FF6080','#FFE040','#56C8FF','#98E870'];
+  for(let i=0;i<4;i++){
+    const w1=Math.sin(frame*0.22+i*1.0)*9;
+    const w2=Math.sin(frame*0.15+i*1.5)*6;
+    ctx.strokeStyle=rc[i]; ctx.lineWidth=1.8;
     ctx.beginPath();
-    ctx.moveTo(rr(kx+13),rr(ky+30));
-    ctx.lineTo(rr(kx+13+ts),rr(ky+42+i*10));
+    ctx.moveTo(rr(cx),rr(cy+14));
+    ctx.quadraticCurveTo(rr(cx+w1),rr(cy+26+i*7),rr(cx+w2),rr(cy+38+i*9));
     ctx.stroke();
   }
 }
@@ -1489,58 +1493,59 @@ function drawRock(x,y){
   ctx.fillRect(rr(x+5),rr(y+14),30,6);
 }
 
-// Japanese kite (凧)
+// 凧（フィールド上を飛んでくる可愛い凧）
 function drawKite(x,y,frame){
-  const sw=Math.sin(frame*0.05)*7;
-  // String
-  ctx.strokeStyle='#5A3010'; ctx.lineWidth=1.5;
+  const sw=Math.sin(frame*0.07)*6;
+  const cx=x+14, cy=y+14; // 中心
+  // 糸（画面外下方向）
+  ctx.strokeStyle='#A09070'; ctx.lineWidth=1.2;
   ctx.beginPath();
-  ctx.moveTo(rr(x+13),rr(y+30+sw));
-  ctx.quadraticCurveTo(rr(x+32),rr(y+62),rr(x+50),rr(y+86));
+  ctx.moveTo(rr(cx+sw*0.4),rr(cy+28));
+  ctx.quadraticCurveTo(rr(cx+18),rr(y+60),rr(cx+36),rr(y+90));
   ctx.stroke();
-  // Body (diamond)
-  ctx.fillStyle='#D02000';
+  // 凧ボディ：4色ひし形
+  const col=['#56C8FF','#FFE840','#FF8890','#98E870'];
+  // 上
+  ctx.fillStyle=col[0];
+  ctx.beginPath(); ctx.moveTo(rr(cx+sw),rr(cy-14)); ctx.lineTo(rr(cx+14+sw),rr(cy)); ctx.lineTo(rr(cx+sw),rr(cy)); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(rr(cx+sw),rr(cy-14)); ctx.lineTo(rr(cx-14+sw),rr(cy)); ctx.lineTo(rr(cx+sw),rr(cy)); ctx.closePath(); ctx.fill();
+  // 左
+  ctx.fillStyle=col[1];
+  ctx.beginPath(); ctx.moveTo(rr(cx-14+sw),rr(cy)); ctx.lineTo(rr(cx+sw),rr(cy)); ctx.lineTo(rr(cx+sw),rr(cy+14)); ctx.closePath(); ctx.fill();
+  // 右
+  ctx.fillStyle=col[2];
+  ctx.beginPath(); ctx.moveTo(rr(cx+14+sw),rr(cy)); ctx.lineTo(rr(cx+sw),rr(cy)); ctx.lineTo(rr(cx+sw),rr(cy+14)); ctx.closePath(); ctx.fill();
+  // 下
+  ctx.fillStyle=col[3];
+  ctx.beginPath(); ctx.moveTo(rr(cx-14+sw),rr(cy)); ctx.lineTo(rr(cx+sw),rr(cy+14)); ctx.lineTo(rr(cx+14+sw),rr(cy)); ctx.closePath();
+  ctx.fill();
+  // 輪郭
+  ctx.strokeStyle='rgba(0,0,0,0.22)'; ctx.lineWidth=1;
   ctx.beginPath();
-  ctx.moveTo(rr(x+13),rr(y));
-  ctx.lineTo(rr(x+26),rr(y+15));
-  ctx.lineTo(rr(x+13),rr(y+30));
-  ctx.lineTo(rr(x+0), rr(y+15));
-  ctx.closePath(); ctx.fill();
-  // Inner pattern (face / oni decoration)
-  ctx.fillStyle='#F8E000';
-  ctx.beginPath();
-  ctx.moveTo(rr(x+13),rr(y+4));
-  ctx.lineTo(rr(x+22),rr(y+15));
-  ctx.lineTo(rr(x+13),rr(y+26));
-  ctx.lineTo(rr(x+4), rr(y+15));
-  ctx.closePath(); ctx.fill();
-  // Oni eyes
-  ctx.fillStyle='#D02000';
-  ctx.fillRect(rr(x+8), rr(y+12),3,3);
-  ctx.fillRect(rr(x+15),rr(y+12),3,3);
-  // Eyebrows (angry)
-  ctx.fillRect(rr(x+7), rr(y+10),5,2);
-  ctx.fillRect(rr(x+14),rr(y+10),5,2);
-  // Mouth
-  ctx.fillRect(rr(x+9), rr(y+18),7,2);
-  ctx.fillRect(rr(x+9), rr(y+20),2,2);
-  ctx.fillRect(rr(x+14),rr(y+20),2,2);
-  // Cross frame
-  ctx.strokeStyle='rgba(0,0,0,0.25)'; ctx.lineWidth=1;
-  ctx.beginPath();
-  ctx.moveTo(rr(x+13),rr(y));
-  ctx.lineTo(rr(x+13),rr(y+30));
-  ctx.moveTo(rr(x+0),rr(y+15));
-  ctx.lineTo(rr(x+26),rr(y+15));
-  ctx.stroke();
-  // Tails
-  const tc=['#F8E000','#E04000','#40A0E0'];
-  for(let i=0;i<3;i++){
-    const ts=Math.sin(frame*0.13+i*1.2)*11;
-    ctx.strokeStyle=tc[i]; ctx.lineWidth=2;
+  ctx.moveTo(rr(cx+sw),rr(cy-14));
+  ctx.lineTo(rr(cx+14+sw),rr(cy));
+  ctx.lineTo(rr(cx+sw),rr(cy+14));
+  ctx.lineTo(rr(cx-14+sw),rr(cy));
+  ctx.closePath(); ctx.stroke();
+  // 十字骨組み
+  ctx.strokeStyle='rgba(255,255,255,0.35)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(rr(cx+sw),rr(cy-14)); ctx.lineTo(rr(cx+sw),rr(cy+14)); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(rr(cx-14+sw),rr(cy)); ctx.lineTo(rr(cx+14+sw),rr(cy)); ctx.stroke();
+  // かわいい顔（目＋口）
+  ctx.fillStyle='#335577';
+  ctx.beginPath(); ctx.arc(rr(cx-4+sw),rr(cy-1),2,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(rr(cx+4+sw),rr(cy-1),2,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle='#335577'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.arc(rr(cx+sw),rr(cy+1),3,0.2,Math.PI-0.2); ctx.stroke();
+  // リボンしっぽ（5本・カラフル・よく揺れる）
+  const rc=['#FF6080','#FFE040','#56C8FF','#98E870','#FF90C8'];
+  for(let i=0;i<5;i++){
+    const wave=Math.sin(frame*0.20+i*0.9)*10;
+    const wave2=Math.sin(frame*0.14+i*1.4)*6;
+    ctx.strokeStyle=rc[i]; ctx.lineWidth=2;
     ctx.beginPath();
-    ctx.moveTo(rr(x+13),rr(y+30+sw));
-    ctx.lineTo(rr(x+13+ts),rr(y+48+i*15+sw));
+    ctx.moveTo(rr(cx+sw), rr(cy+14));
+    ctx.quadraticCurveTo(rr(cx+wave+sw), rr(cy+28+i*8), rr(cx+wave2+sw), rr(cy+42+i*10));
     ctx.stroke();
   }
 }
@@ -2565,6 +2570,7 @@ function update(){
     if(--kiteT<=0) kiteActive=false;
     vy+=KITE_FALL_G; if(vy>2.5) vy=2.5;
     py+=vy;
+    if(py<38){py=38; vy=0;}  // 画面上端より下に制限
     if(py>=GY-46){py=GY-46; vy=0; grounded=true; kiteActive=false; doubleJumped=false;}
   } else {
     if(!grounded){vy+=G; py+=vy;}
