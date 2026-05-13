@@ -2130,7 +2130,7 @@ let platforms,platSpawnD,platZigzag;
 let stageTransT,prevStageIdx,kickT,kickHoldT,kickHolding;
 let goalWarn1,goalWarn2,paused;
 let horseFlashT,clearParts;
-let doubleJumped,kiteActive,kiteT,projectiles,attackCooldown,doubleJumpTaught;
+let doubleJumped,kiteActive,kiteT,projectiles,attackCooldown,doubleJumpTaught,kiteTaught;
 function saveBest(){
   try{
     const b=JSON.parse(localStorage.getItem('warashibe_best')||'null');
@@ -2157,7 +2157,7 @@ function initGame(){
   stageTransT=0; prevStageIdx=0; kickT=0; kickHoldT=0; kickHolding=false;
   platforms=[]; platSpawnD=0; platZigzag=0;
   endT=0; endPlayerX=PX; endFade=0; endMansionX=GW+300;
-  doubleJumped=false; kiteActive=false; kiteT=0; projectiles=[]; attackCooldown=0; doubleJumpTaught=false;
+  doubleJumped=false; kiteActive=false; kiteT=0; projectiles=[]; attackCooldown=0; doubleJumpTaught=false; kiteTaught=false;
   state='playing';
   BGM.start();
 }
@@ -2206,7 +2206,8 @@ function spawnEntity(){
     const bambooOk=stageIdx>=1&&stageIdx<=2&&!bridgeActive;
     if(bambooOk&&o<0.14) e={type:'obstacle',sub:'bamboo',x:GW+30,y:GY,alive:true,phase:'stand',fallT:28};
     else if(o<0.18)       e={type:'obstacle',sub:'rock',        x:GW,    y:GY-20,vy:0,alive:true};
-    else if(o<0.40)  e={type:'obstacle',sub:'kite',        x:GW,    y:GY-128,vy:0,alive:true};
+    else if(o<0.40){e={type:'obstacle',sub:'kite',x:GW,y:GY-128,vy:0,alive:true};
+      if(!kiteTaught){kiteTaught=true;msg='凧にジャンプで触れると浮ける！';msgT=190;}}
     else if(o<0.60)  e={type:'obstacle',sub:'crow_front',  x:GW+10, y:GY-50,vy:0,alive:true};
     else if(o<(lateGame?0.78:0.74)) e={type:'obstacle',sub:'crow_zigzag',x:GW+10,y:GY-80,vy:0,alive:true,phase:Math.random()*Math.PI*2};
     else if(!bridgeActive&&dist>800&&o<(stageIdx>=3?0.94:0.90)){
