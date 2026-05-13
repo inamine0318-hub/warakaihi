@@ -3079,41 +3079,93 @@ function drawClearScreen(){
 }
 
 function drawStartScreen(){
-  ctx.fillStyle='rgba(0,0,0,0.78)'; ctx.fillRect(0,0,GW,GH);
-  ctx.strokeStyle='rgba(200,160,0,0.40)'; ctx.lineWidth=2;
-  ctx.strokeRect(10,10,GW-20,GH-20);
-  ctx.strokeStyle='rgba(200,160,0,0.20)'; ctx.lineWidth=1;
-  ctx.strokeRect(14,14,GW-28,GH-28);
+  const cx=GW/2, t=frame*0.022;
 
-  ctx.textAlign='center';
-  ctx.fillStyle='#E8B000'; ctx.font='bold 30px monospace';
-  ctx.fillText('わらしべ長者',GW/2,rr(GH*0.23));
-  ctx.fillStyle='#C89800'; ctx.font='bold 14px monospace';
-  ctx.fillText('R U N N E R',GW/2,rr(GH*0.30));
+  // 暗めの琥珀色オーバーレイ（背景が透けて見える）
+  ctx.fillStyle='rgba(6,3,0,0.66)'; ctx.fillRect(0,0,GW,GH);
 
-  ctx.fillStyle='rgba(200,160,0,0.35)'; ctx.fillRect(GW/2-90,rr(GH*0.34),180,2);
+  // 上下グラデーション帯
+  let hg=ctx.createLinearGradient(0,0,0,50);
+  hg.addColorStop(0,'rgba(160,80,0,0.38)'); hg.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=hg; ctx.fillRect(0,0,GW,50);
+  hg=ctx.createLinearGradient(0,GH-50,0,GH);
+  hg.addColorStop(0,'rgba(0,0,0,0)'); hg.addColorStop(1,'rgba(160,80,0,0.28)');
+  ctx.fillStyle=hg; ctx.fillRect(0,GH-50,GW,50);
 
-  ctx.fillStyle='rgba(240,220,180,0.85)'; ctx.font='12px monospace';
-  ctx.fillText('わらから始め　旅をして',GW/2,rr(GH*0.41));
-  ctx.fillText('交換を重ね　長者を目指せ！',GW/2,rr(GH*0.47));
+  // L字コーナー装飾
+  function lcorner(x,y,dx,dy){
+    ctx.strokeStyle='rgba(210,150,0,0.60)'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(x+dx*22,y); ctx.lineTo(x,y); ctx.lineTo(x,y+dy*22); ctx.stroke();
+    ctx.strokeStyle='rgba(210,150,0,0.25)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(x+dx*14,y+dy*5); ctx.lineTo(x+dx*5,y+dy*5);
+    ctx.lineTo(x+dx*5,y+dy*14); ctx.stroke();
+  }
+  lcorner(10,10,1,1); lcorner(GW-10,10,-1,1);
+  lcorner(10,GH-10,1,-1); lcorner(GW-10,GH-10,-1,-1);
 
-  ctx.fillStyle='rgba(200,180,140,0.60)'; ctx.font='10px monospace';
-  ctx.fillText('🪨 岩  ・  凧  ・  カラス×4種 を避けよう',GW/2,rr(GH*0.55));
+  // 回転する家紋メダリオン
+  const my=rr(GH*0.205), mr=28, pulse=1+Math.sin(t*1.6)*0.022;
+  ctx.strokeStyle='rgba(225,160,10,0.55)'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.arc(cx,my,mr*pulse,0,Math.PI*2); ctx.stroke();
+  ctx.strokeStyle='rgba(225,160,10,0.28)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.arc(cx,my,(mr-6)*pulse,0,Math.PI*2); ctx.stroke();
+  for(let i=0;i<8;i++){
+    const a=i*Math.PI/4+t*0.38;
+    ctx.fillStyle='rgba(230,175,0,0.30)';
+    ctx.beginPath(); ctx.arc(cx+Math.cos(a)*(mr-11)*pulse, my+Math.sin(a)*(mr-11)*pulse, 4,0,Math.PI*2); ctx.fill();
+  }
+  ctx.fillStyle='rgba(250,210,20,0.75)';
+  ctx.beginPath(); ctx.arc(cx,my,5,0,Math.PI*2); ctx.fill();
+
+  // タイトル「わらしべ長者」
+  const ty=rr(GH*0.435);
+  ctx.textAlign='center'; ctx.font='bold 32px monospace';
+  // 影
+  ctx.fillStyle='rgba(0,0,0,0.65)'; ctx.fillText('わらしべ長者',cx+2,ty+3);
+  // グラデーション本体
+  const tg=ctx.createLinearGradient(0,ty-27,0,ty+4);
+  tg.addColorStop(0,'#FFF080'); tg.addColorStop(0.4,'#F4AC00'); tg.addColorStop(1,'#B05800');
+  ctx.fillStyle=tg; ctx.fillText('わらしべ長者',cx,ty);
+
+  // RUNNER サブタイトル
+  ctx.fillStyle='#C8A028'; ctx.font='bold 13px monospace';
+  ctx.fillText('R U N N E R',cx,rr(GH*0.510));
+
+  // 区切り線（ひし形付き）
+  const dly=rr(GH*0.543);
+  ctx.strokeStyle='rgba(200,138,0,0.55)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(cx-86,dly); ctx.lineTo(cx-20,dly); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx+20,dly); ctx.lineTo(cx+86,dly); ctx.stroke();
+  ctx.fillStyle='rgba(230,158,0,0.75)';
+  ctx.save(); ctx.translate(cx,dly); ctx.rotate(Math.PI/4); ctx.fillRect(-4,-4,8,8); ctx.restore();
+
+  // キャッチコピー
+  ctx.fillStyle='rgba(238,212,162,0.78)'; ctx.font='11px monospace';
+  ctx.fillText('わら一本から　屋敷を目指す旅',cx,rr(GH*0.598));
+
+  // ベストスコア
   const bestS=loadBest();
   if(bestS){
     const grades=['SS','S','A','B','C','D','E','F','--'];
-    ctx.fillStyle='rgba(240,200,60,0.80)'; ctx.font='bold 10px monospace';
-    ctx.fillText('最高記録  Rank '+grades[bestS.rank]+'  '+bestS.dist+'歩',GW/2,rr(GH*0.63));
+    const bx=cx-60,by=rr(GH*0.648)-14,bw=120,bh=21;
+    ctx.fillStyle='rgba(18,8,0,0.65)'; ctx.fillRect(bx,by,bw,bh);
+    ctx.strokeStyle='rgba(205,148,0,0.55)'; ctx.lineWidth=1; ctx.strokeRect(bx,by,bw,bh);
+    ctx.fillStyle='rgba(255,215,55,0.94)'; ctx.font='bold 10px monospace';
+    ctx.fillText('★ BEST  '+grades[bestS.rank]+'  '+bestS.dist+' 歩 ★',cx,rr(GH*0.648));
   }
 
-  if(Math.floor(Date.now()/600)%2===0){
-    ctx.fillStyle='#E8B800'; ctx.font='bold 14px monospace';
-    ctx.fillText('タップ / SPACE でスタート',GW/2,rr(GH*0.72));
+  // スタートプロンプト（点滅）
+  if(Math.floor(Date.now()/560)%2===0){
+    const bpx=cx-72,bpy=rr(GH*0.750)-15,bpw=144,bph=24;
+    ctx.fillStyle='rgba(14,7,0,0.75)'; ctx.fillRect(bpx,bpy,bpw,bph);
+    ctx.strokeStyle='rgba(235,170,10,0.75)'; ctx.lineWidth=1.5; ctx.strokeRect(bpx,bpy,bpw,bph);
+    ctx.fillStyle='#FFE820'; ctx.font='bold 13px monospace';
+    ctx.fillText('▶  タップ / SPACE',cx,rr(GH*0.750));
   }
 
-  ctx.fillStyle='rgba(200,160,0,0.22)'; ctx.font='bold 36px monospace';
-  ctx.fillText('旅',32,GH-16);
-  ctx.fillText('路',GW-32,GH-16);
+  // 下コーナー透かし文字
+  ctx.fillStyle='rgba(190,120,0,0.14)'; ctx.font='bold 52px monospace';
+  ctx.fillText('旅',18,GH-8); ctx.fillText('路',GW-18,GH-8);
   ctx.textAlign='left';
 }
 
