@@ -82,6 +82,9 @@ const ESCALE=1.0;   // enemy visual scale  (0.7x of previous 1.4)
 const BRIDGE_EVERY=800,BRIDGE_LEN=280;
 const BPLANK_W=40,BPLANK_PITCH=50,BSCROLL=6.0;
 const GOAL_DIST=6000;
+const KITE_FLOAT_DUR=185;  // 凧浮遊フレーム数（約3秒）
+const KITE_FALL_G=0.13;    // 浮遊中の重力
+const KITE_RISE=-8;        // 凧タップ時の上昇力
 // わらしべ連鎖アイテム（5種）
 const CHAIN=[
   {name:'わら',   col:'#C8A848'},
@@ -2066,6 +2069,7 @@ let platforms,platSpawnD,platZigzag;
 let stageTransT,prevStageIdx,kickT,kickHoldT,kickHolding;
 let goalWarn1,goalWarn2,paused;
 let horseFlashT,clearParts;
+let doubleJumped,kiteActive,kiteT,projectiles,attackCooldown;
 function saveBest(){
   try{
     const b=JSON.parse(localStorage.getItem('warashibe_best')||'null');
@@ -2092,6 +2096,7 @@ function initGame(){
   stageTransT=0; prevStageIdx=0; kickT=0; kickHoldT=0; kickHolding=false;
   platforms=[]; platSpawnD=0; platZigzag=0;
   endT=0; endPlayerX=PX; endFade=0; endMansionX=GW+300;
+  doubleJumped=false; kiteActive=false; kiteT=0; projectiles=[]; attackCooldown=0;
   state='playing';
   BGM.start();
 }
@@ -2209,7 +2214,7 @@ function updatePlatforms(){
     if(!grounded&&vy>=0){
       const ptop=p.y+(p.sinkAmt||0);
       if(py+46>=ptop&&py+46<=ptop+vy+8&&PX+20>p.x&&PX+4<p.x+p.w){
-        py=ptop-46; vy=0; grounded=true;
+        py=ptop-46; vy=0; grounded=true; doubleJumped=false;
         if(p.sub==='dawara_crumble'&&!p.crumbling){
           p.crumbling=true;
           msg='米俵が崩れる！'; msgT=120;
@@ -2333,7 +2338,7 @@ function updateBridge(){
       const ly=log.y;
       const ph=46;
       if(PX+22>lx&&PX+4<lx+36&&py+ph>=ly-1&&py+ph<=ly+8){
-        py=ly-ph; vy=0; grounded=true; break;
+        py=ly-ph; vy=0; grounded=true; doubleJumped=false; break;
       }
     }
   }
@@ -2511,8 +2516,15 @@ function update(){
     }
     if(!ok) grounded=false;
   }
-  if(!grounded){vy+=G; py+=vy;}
-  if(py>=GY-46){py=GY-46; vy=0; grounded=true;}
+  if(kiteActive){
+    if(--kiteT<=0) kiteActive=false;
+    vy+=KITE_FALL_G; if(vy>2.5) vy=2.5;
+    py+=vy;
+    if(py>=GY-46){py=GY-46; vy=0; grounded=true; kiteActive=false; doubleJumped=false;}
+  } else {
+    if(!grounded){vy+=G; py+=vy;}
+    if(py>=GY-46){py=GY-46; vy=0; grounded=true; doubleJumped=false;}
+  }
 
   if(invuln&&--invT<=0) invuln=false;
   if(msgT>0&&--msgT===0) msg='';
@@ -2571,6 +2583,22 @@ function update(){
   if(!goalWarn1&&dist>=GOAL_DIST*0.82){goalWarn1=true;msg='屋敷が見えてきた！もうすぐだ！';msgT=220;}
   if(!goalWarn2&&dist>=GOAL_DIST*0.95){goalWarn2=true;msg='あと少し！！屋敷まで走れ！';msgT=200;}
 
+  // わらしべアタック弾更新
+  if(attackCooldown>0) --attackCooldown;
+  projectiles=projectiles.filter(p=>{
+    p.x+=9; p.vy+=0.50; p.y+=p.vy;
+    if(p.x>GW+30||p.y>GH) return false;
+    for(const e of entities){
+      if(!e.alive||e.type!=='obstacle') continue;
+      if(aabb(p.x-4,p.y-4,8,8,e.x,e.y,32,32)){
+        e.alive=false;
+        beep(180,0.18,'sawtooth',0.13);
+        return false;
+      }
+    }
+    return true;
+  });
+
   spawnEntity();
   updateBridge();
   updatePlatforms();
@@ -2611,11 +2639,16 @@ function update(){
         e.x-=sp*0.85;
         if(e.x<GW*0.82){e.phase='fall'; SFX.creak();}
       } else if(e.phase==='fall'){
-        e.x-=sp*0.22; // ゆっくり倒れる（劇的な演出）
+        e.x-=sp*0.22;
         if(--e.fallT<=0){e.phase='fallen'; SFX.thud();}
       } else {
         e.x-=sp*0.85;
       }
+    }
+    else if(e.sub==='kite'){
+      e.x-=sp*0.52;
+      if(e.baseY===undefined) e.baseY=e.y;
+      e.y=e.baseY+Math.sin(frame*0.06)*10;
     }
     else                          e.x-=sp*0.66;
 
@@ -2624,10 +2657,18 @@ function update(){
     if(!invuln){
       const m=8, px_=PX+m, py_=py+m, pw=14, ph=26;
       if(e.type==='obstacle'){
-        if(e.sub==='bamboo'&&e.phase!=='fallen') return true; // 立ち・倒れ中は無敵
+        if(e.sub==='bamboo'&&e.phase!=='fallen') return true;
+        // 凧：ダメージなし → つかまって浮遊モード
+        if(e.sub==='kite'){
+          if(aabb(px_,py_,pw,ph,e.x+8,e.y+8,14,16)&&!kiteActive){
+            kiteActive=true; kiteT=KITE_FLOAT_DUR; e.alive=false; vy=-4;
+            beep(600,0.12,'sine',0.08); setTimeout(()=>beep(880,0.18,'sine',0.07),80);
+            msg='凧につかまった！'; msgT=160;
+          }
+          return true;
+        }
         let ex,ey,ew,eh;
         if(e.sub==='rock')             {ex=e.x+m;   ey=e.y+m;   ew=36-m*2; eh=16-m;}
-        else if(e.sub==='kite')        {ex=e.x+m;   ey=e.y+m;   ew=22-m;   eh=24-m;}
         else if(e.sub==='crow_zigzag') {ex=e.x-4;   ey=e.y-4;   ew=22;     eh=22;  }
         else if(e.sub==='tanuki')      {ex=e.x-2;   ey=e.y-4;   ew=20;     eh=32;  }
         else if(e.sub==='oihagi')      {ex=e.x+4;   ey=e.y+10;  ew=20;     eh=40;  }
@@ -3476,6 +3517,47 @@ function loop(){
         ctx.fillStyle=fg; ctx.fillRect(0,0,GW,GH);
       }
       drawHUD();
+      // ── わらしべアタックボタン（右下）
+      if(!paused){
+        const canAtk=items&&items.filter(Boolean).length>=2&&attackCooldown===0;
+        const bx=GW-74,by=GH-80,bw=66,bh=40;
+        ctx.save();
+        ctx.globalAlpha=canAtk?0.90:0.28;
+        ctx.fillStyle=canAtk?'#6A2800':'#1C0C00';
+        ctx.strokeStyle=canAtk?'#E07020':'#5A3010';
+        ctx.lineWidth=2;
+        ctx.fillRect(bx,by,bw,bh);
+        ctx.strokeRect(bx,by,bw,bh);
+        ctx.globalAlpha=canAtk?1.0:0.40;
+        ctx.fillStyle=canAtk?'#FFD060':'#9A7030';
+        ctx.font='bold 9px monospace'; ctx.textAlign='center';
+        ctx.fillText('わらしべ',bx+bw/2,by+14);
+        ctx.fillText('アタック',bx+bw/2,by+26);
+        if(!canAtk){
+          ctx.font='8px monospace'; ctx.fillStyle='#A07040';
+          ctx.fillText(items&&items.filter(Boolean).length<2?'荷物2個必要':'CT中',bx+bw/2,by+37);
+        }
+        ctx.restore();
+        // 投石描画
+        for(const p of projectiles){
+          ctx.fillStyle='#907870';
+          ctx.beginPath(); ctx.arc(rr(p.x),rr(p.y),4,0,Math.PI*2); ctx.fill();
+          ctx.fillStyle='#C0B0A8';
+          ctx.beginPath(); ctx.arc(rr(p.x-1),rr(p.y-1),2,0,Math.PI*2); ctx.fill();
+        }
+        // 凧浮遊タイマーバー
+        if(kiteActive){
+          const t=kiteT/KITE_FLOAT_DUR;
+          ctx.fillStyle='rgba(0,0,0,0.55)';
+          ctx.fillRect(GW/2-44,12,88,10);
+          ctx.fillStyle=`hsl(${180+60*t},80%,60%)`;
+          ctx.fillRect(GW/2-44,12,Math.round(88*t),10);
+          ctx.fillStyle='#A8E8FF';
+          ctx.font='bold 8px monospace'; ctx.textAlign='center';
+          ctx.fillText('凧 浮遊中',GW/2,11);
+          ctx.textAlign='left';
+        }
+      }
       // ポーズボタン（右上）
       ctx.fillStyle=paused?'rgba(240,200,0,0.85)':'rgba(255,255,255,0.25)';
       ctx.fillRect(GW-30,6,24,20);
@@ -3544,7 +3626,27 @@ function doAction(){
   if(paused){paused=false; return;}
   if(state==='clear'){state='start'; return;}
   if(state!=='playing'){initGame(); return;}
-  if(grounded){vy=(items&&items[4])?JF*1.5:JF; grounded=false; SFX.jump();}
+  // 凧浮遊中：タップで上昇
+  if(kiteActive){vy=KITE_RISE; SFX.jump(); return;}
+  // 地上ジャンプ
+  if(grounded){
+    vy=(items&&items[4])?JF*1.5:JF; grounded=false; doubleJumped=false; SFX.jump();
+  // 2段ジャンプ（アイテム2個以上所持時）
+  } else if(!doubleJumped&&items&&items.filter(Boolean).length>=2){
+    vy=JF*0.78; doubleJumped=true; SFX.jump();
+  }
+}
+function doAttack(){
+  if(state!=='playing'||paused) return;
+  if(!items||items.filter(Boolean).length<2||attackCooldown>0) return;
+  // ランダムで2個アイテムロスト
+  const owned=items.map((v,i)=>v?i:-1).filter(i=>i>=0);
+  for(let i=owned.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[owned[i],owned[j]]=[owned[j],owned[i]];}
+  owned.slice(0,2).forEach(i=>{items[i]=false; lostItems[i]=true;});
+  projectiles.push({x:PX+24,y:py+16,vy:-3.5});
+  attackCooldown=80;
+  beep(280,0.07,'sawtooth',0.14); setTimeout(()=>beep(380,0.05,'square',0.10),35);
+  msg='石を投げた！荷物2個ロスト'; msgT=140;
 }
 document.addEventListener('keydown',e=>{
   if(e.code==='Space'||e.code==='ArrowUp'){e.preventDefault(); doAction();}
@@ -3557,6 +3659,7 @@ document.addEventListener('touchstart',e=>{
   const tx=(t.clientX-rect.left)*(GW/rect.width);
   const ty=(t.clientY-rect.top)*(GH/rect.height);
   if(state==='playing'&&tx>=GW-36&&ty<=36){togglePause();return;}
+  if(state==='playing'&&!paused&&tx>=GW-74&&ty>=GH-80&&tx<=GW-8&&ty<=GH-8){doAttack();return;}
   doAction();
 },{passive:false});
 document.addEventListener('click',e=>{
@@ -3564,6 +3667,7 @@ document.addEventListener('click',e=>{
   const tx=(e.clientX-rect.left)*(GW/rect.width);
   const ty=(e.clientY-rect.top)*(GH/rect.height);
   if(state==='playing'&&tx>=GW-36&&ty<=36){togglePause();return;}
+  if(state==='playing'&&!paused&&tx>=GW-74&&ty>=GH-80&&tx<=GW-8&&ty<=GH-8){doAttack();return;}
   doAction();
 });
 
