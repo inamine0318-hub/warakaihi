@@ -1763,6 +1763,22 @@ function drawOihagi(ex,ey,phase,frame){
     ctx.fillRect(rr(bx+14),rr(by+8),2,1);
     ctx.fillStyle='#D8C8A0'; ctx.fillRect(rr(bx+7),rr(by+9),9,1); // glare below
   }
+
+  // 眼帯（手前の目を覆う、革紐付き）
+  ctx.fillStyle='#08040A'; ctx.fillRect(rr(bx+4),rr(by+5),9,8);  // パッチ外枠
+  ctx.fillStyle='#120E18'; ctx.fillRect(rr(bx+5),rr(by+6),7,6);  // パッチ本体
+  ctx.fillStyle='#1C1826'; ctx.fillRect(rr(bx+6),rr(by+7),5,3);  // 中央
+  ctx.fillStyle='#08040A'; ctx.fillRect(rr(bx+13),rr(by+7),11,2); // 紐（後頭部へ）
+
+  // 無精髭（ほっかむりの縁から見える、顎まわり）
+  ctx.fillStyle='#1C1008';
+  ctx.fillRect(rr(bx+4), rr(by+18),13,4); // 顎の髭
+  ctx.fillRect(rr(bx+6), rr(by+21),9, 2); // 顎先
+  ctx.fillStyle='#2E1E0C'; // 毛束のハイライト
+  ctx.fillRect(rr(bx+5), rr(by+19),2,2);
+  ctx.fillRect(rr(bx+9), rr(by+20),2,2);
+  ctx.fillRect(rr(bx+14),rr(by+19),2,2);
+  ctx.fillRect(rr(bx+16),rr(by+20),2,1);
 }
 
 function drawTanuki(x,y,frame){
@@ -1785,9 +1801,11 @@ function drawTanuki(x,y,frame){
   ctx.fillStyle=OL; ctx.beginPath(); ctx.arc(cx,rr(y+8),9,0,Math.PI*2); ctx.fill();
   ctx.fillStyle='#C07830'; ctx.beginPath(); ctx.arc(cx,rr(y+8),8,0,Math.PI*2); ctx.fill();
 
-  // たぬき目隈（目の周りの黒い毛）
-  ctx.fillStyle='#1A0800';
-  ctx.fillRect(cx-7,rr(y+5),5,5); ctx.fillRect(cx+2,rr(y+5),5,5);
+  // たぬき目隈（大きめの黒い隈でタヌキらしく）
+  ctx.fillStyle='#120600';
+  ctx.fillRect(cx-8,rr(y+4),7,6); ctx.fillRect(cx+1,rr(y+4),7,6);
+  // 目鼻橋の繋がり
+  ctx.fillRect(cx-1,rr(y+5),2,3);
   // 目
   ctx.fillStyle='#F0E0B0'; ctx.fillRect(cx-6,rr(y+6),3,3); ctx.fillRect(cx+3,rr(y+6),3,3);
   ctx.fillStyle='#060200'; ctx.fillRect(cx-5,rr(y+7),2,2); ctx.fillRect(cx+4,rr(y+7),2,2);
@@ -1798,6 +1816,20 @@ function drawTanuki(x,y,frame){
   ctx.fillStyle='#1A0800';
   ctx.fillRect(cx-3,rr(y+13),7,1);
   ctx.fillRect(cx-3,rr(y+12),1,1); ctx.fillRect(cx+3,rr(y+12),1,1);
+
+  // しっぽ（縞模様のタヌキらしいしっぽ）- 胴体より先に描いて後ろに見せる
+  ctx.fillStyle='#1A0A02';
+  ctx.fillRect(rr(cx+6),rr(y+12),14,18);
+  ctx.fillStyle='#B07832';
+  ctx.fillRect(rr(cx+7),rr(y+13),12,16);
+  ctx.fillStyle='#3A1808';                           // 縞1
+  ctx.fillRect(rr(cx+7),rr(y+16),12,3);
+  ctx.fillStyle='#3A1808';                           // 縞2
+  ctx.fillRect(rr(cx+7),rr(y+22),12,3);
+  ctx.fillStyle='#D0AA62';                           // 先端（白っぽく）
+  ctx.fillRect(rr(cx+7),rr(y+26),12,3);
+  ctx.fillStyle='#C09050';                           // 天頂ハイライト
+  ctx.fillRect(rr(cx+9),rr(y+13),8,2);
 
   // 胴体（太鼓腹）
   ctx.fillStyle=OL; ctx.fillRect(cx-8,rr(y+15),18,16);
