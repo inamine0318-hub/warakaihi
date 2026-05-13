@@ -3582,7 +3582,7 @@ function loop(){
       // ── わらしべアタックボタン（右下）
       if(!paused){
         const canAtk=items&&items.filter(Boolean).length>=2&&attackCooldown===0;
-        const bx=GW-74,by=GH-80,bw=66,bh=40;
+        const bx=GW-78,by=GH-104,bw=70,bh=52; // ホームインジケーター対応・タップ面積拡大
         ctx.save();
         ctx.globalAlpha=canAtk?0.90:0.28;
         ctx.fillStyle=canAtk?'#6A2800':'#1C0C00';
@@ -3592,12 +3592,12 @@ function loop(){
         ctx.strokeRect(bx,by,bw,bh);
         ctx.globalAlpha=canAtk?1.0:0.40;
         ctx.fillStyle=canAtk?'#FFD060':'#9A7030';
-        ctx.font='bold 9px monospace'; ctx.textAlign='center';
-        ctx.fillText('わらしべ',bx+bw/2,by+14);
-        ctx.fillText('アタック',bx+bw/2,by+26);
+        ctx.font='bold 10px monospace'; ctx.textAlign='center';
+        ctx.fillText('わらしべ',bx+bw/2,by+18);
+        ctx.fillText('アタック',bx+bw/2,by+32);
         if(!canAtk){
-          ctx.font='8px monospace'; ctx.fillStyle='#A07040';
-          ctx.fillText(items&&items.filter(Boolean).length<2?'荷物2個必要':'CT中',bx+bw/2,by+37);
+          ctx.font='9px monospace'; ctx.fillStyle='#A07040';
+          ctx.fillText(items&&items.filter(Boolean).length<2?'荷物2個必要':'CT中',bx+bw/2,by+44);
         }
         ctx.restore();
         // 投石描画
@@ -3620,12 +3620,12 @@ function loop(){
           ctx.textAlign='left';
         }
       }
-      // ポーズボタン（右上）
-      ctx.fillStyle=paused?'rgba(240,200,0,0.85)':'rgba(255,255,255,0.25)';
-      ctx.fillRect(GW-30,6,24,20);
+      // ポーズボタン（右上・44px以上）
+      ctx.fillStyle=paused?'rgba(240,200,0,0.85)':'rgba(255,255,255,0.22)';
+      ctx.fillRect(GW-50,4,46,40);
       ctx.fillStyle=paused?'#3A2000':'rgba(0,0,0,0.6)';
-      ctx.font='bold 11px monospace'; ctx.textAlign='center';
-      ctx.fillText(paused?'▶':'❙❙',GW-18,20); ctx.textAlign='left';
+      ctx.font='bold 13px monospace'; ctx.textAlign='center';
+      ctx.fillText(paused?'▶':'❙❙',GW-27,28); ctx.textAlign='left';
       if(paused) drawPauseScreen();
       drawStageTransition();
       drawMessage();
@@ -3720,16 +3720,16 @@ document.addEventListener('touchstart',e=>{
   const rect=canvas.getBoundingClientRect();
   const tx=(t.clientX-rect.left)*(GW/rect.width);
   const ty=(t.clientY-rect.top)*(GH/rect.height);
-  if(state==='playing'&&tx>=GW-36&&ty<=36){togglePause();return;}
-  if(state==='playing'&&!paused&&tx>=GW-74&&ty>=GH-80&&tx<=GW-8&&ty<=GH-8){doAttack();return;}
+  if(state==='playing'&&tx>=GW-52&&ty<=46){togglePause();return;}
+  if(state==='playing'&&!paused&&tx>=GW-80&&ty>=GH-106&&tx<=GW-6&&ty<=GH-6){doAttack();return;}
   doAction();
 },{passive:false});
 document.addEventListener('click',e=>{
   const rect=canvas.getBoundingClientRect();
   const tx=(e.clientX-rect.left)*(GW/rect.width);
   const ty=(e.clientY-rect.top)*(GH/rect.height);
-  if(state==='playing'&&tx>=GW-36&&ty<=36){togglePause();return;}
-  if(state==='playing'&&!paused&&tx>=GW-74&&ty>=GH-80&&tx<=GW-8&&ty<=GH-8){doAttack();return;}
+  if(state==='playing'&&tx>=GW-52&&ty<=46){togglePause();return;}
+  if(state==='playing'&&!paused&&tx>=GW-80&&ty>=GH-106&&tx<=GW-6&&ty<=GH-6){doAttack();return;}
   doAction();
 });
 
