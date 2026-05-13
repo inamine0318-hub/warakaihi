@@ -987,49 +987,72 @@ function drawPlayerOnHorse(py,frame,invuln,lv){
 
 function drawKiteParachute(py,frame){
   const x=PX;
-  const sway=Math.sin(frame*0.08)*6;
-  const bob =Math.sin(frame*0.12)*3;
-  const cx=rr(x+12+sway), cy=rr(py-50+bob); // 凧の中心
-  // 糸（両肩→凧下端）
-  ctx.strokeStyle='#A09070'; ctx.lineWidth=1.2;
-  ctx.beginPath(); ctx.moveTo(rr(x+7), rr(py+8)); ctx.lineTo(rr(cx-10),rr(cy+14)); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(rr(x+19),rr(py+8)); ctx.lineTo(rr(cx+10),rr(cy+14)); ctx.stroke();
-  // 凧4色ひし形
-  const col=['#56C8FF','#FFE840','#FF8890','#98E870'];
-  ctx.fillStyle=col[0];
-  ctx.beginPath(); ctx.moveTo(rr(cx),rr(cy-14)); ctx.lineTo(rr(cx+12),rr(cy)); ctx.lineTo(rr(cx),rr(cy)); ctx.closePath(); ctx.fill();
-  ctx.beginPath(); ctx.moveTo(rr(cx),rr(cy-14)); ctx.lineTo(rr(cx-12),rr(cy)); ctx.lineTo(rr(cx),rr(cy)); ctx.closePath(); ctx.fill();
-  ctx.fillStyle=col[1];
-  ctx.beginPath(); ctx.moveTo(rr(cx-12),rr(cy)); ctx.lineTo(rr(cx),rr(cy)); ctx.lineTo(rr(cx),rr(cy+14)); ctx.closePath(); ctx.fill();
-  ctx.fillStyle=col[2];
-  ctx.beginPath(); ctx.moveTo(rr(cx+12),rr(cy)); ctx.lineTo(rr(cx),rr(cy)); ctx.lineTo(rr(cx),rr(cy+14)); ctx.closePath(); ctx.fill();
-  // 輪郭
-  ctx.strokeStyle='rgba(0,0,0,0.20)'; ctx.lineWidth=1;
+  const pcx=x+12; // プレイヤー中心x
+  const sway=Math.sin(frame*0.07)*5;
+  const bob =Math.sin(frame*0.11)*2;
+  const px=pcx+sway; // パラソル中心（揺れる）
+  const R=30;        // ドーム半径
+  const dcy=py-28+bob; // ドーム中心y
+
+  // ハンドル（棒）
+  ctx.strokeStyle='#7A5020'; ctx.lineWidth=2.5;
   ctx.beginPath();
-  ctx.moveTo(rr(cx),rr(cy-14)); ctx.lineTo(rr(cx+12),rr(cy));
-  ctx.lineTo(rr(cx),rr(cy+14)); ctx.lineTo(rr(cx-12),rr(cy));
-  ctx.closePath(); ctx.stroke();
-  // 十字骨組み
-  ctx.strokeStyle='rgba(255,255,255,0.30)'; ctx.lineWidth=1;
-  ctx.beginPath(); ctx.moveTo(rr(cx),rr(cy-14)); ctx.lineTo(rr(cx),rr(cy+14)); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(rr(cx-12),rr(cy)); ctx.lineTo(rr(cx+12),rr(cy)); ctx.stroke();
-  // 顔
-  ctx.fillStyle='#335577';
-  ctx.beginPath(); ctx.arc(rr(cx-3),rr(cy-2),1.5,0,Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.arc(rr(cx+3),rr(cy-2),1.5,0,Math.PI*2); ctx.fill();
-  ctx.strokeStyle='#335577'; ctx.lineWidth=1.2;
-  ctx.beginPath(); ctx.arc(rr(cx),rr(cy),2.5,0.2,Math.PI-0.2); ctx.stroke();
-  // リボンしっぽ（4本・カラフル・大きく揺れる）
-  const rc=['#FF6080','#FFE040','#56C8FF','#98E870'];
-  for(let i=0;i<4;i++){
-    const w1=Math.sin(frame*0.22+i*1.0)*9;
-    const w2=Math.sin(frame*0.15+i*1.5)*6;
-    ctx.strokeStyle=rc[i]; ctx.lineWidth=1.8;
+  ctx.moveTo(rr(px),rr(dcy));
+  ctx.lineTo(rr(pcx),rr(py+6));
+  ctx.stroke();
+
+  // ドームの色分けセグメント（6等分）
+  const cols=['#FF88A8','#FFFFC8','#88D8FF','#FFE880','#C8F8A0','#FFB0D0'];
+  const n=6;
+  for(let i=0;i<n;i++){
+    const a0=Math.PI+(i/n)*Math.PI;
+    const a1=Math.PI+((i+1)/n)*Math.PI;
+    ctx.fillStyle=cols[i];
     ctx.beginPath();
-    ctx.moveTo(rr(cx),rr(cy+14));
-    ctx.quadraticCurveTo(rr(cx+w1),rr(cy+26+i*7),rr(cx+w2),rr(cy+38+i*9));
+    ctx.moveTo(rr(px),rr(dcy));
+    ctx.arc(rr(px),rr(dcy),R,a0,a1);
+    ctx.closePath(); ctx.fill();
+  }
+
+  // ドーム外枠
+  ctx.strokeStyle='rgba(0,0,0,0.15)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.arc(rr(px),rr(dcy),R,Math.PI,0); ctx.stroke();
+
+  // セグメント仕切り線
+  ctx.strokeStyle='rgba(255,255,255,0.35)'; ctx.lineWidth=1;
+  for(let i=1;i<n;i++){
+    const a=Math.PI+(i/n)*Math.PI;
+    ctx.beginPath();
+    ctx.moveTo(rr(px),rr(dcy));
+    ctx.lineTo(rr(px+Math.cos(a)*R),rr(dcy+Math.sin(a)*R));
     ctx.stroke();
   }
+
+  // スカラップ縁（ひらひらフリル）
+  const sr=R/n;
+  for(let i=0;i<n;i++){
+    const sx=px-R+sr+i*(2*R/n);
+    ctx.fillStyle=cols[i];
+    ctx.beginPath();
+    ctx.arc(rr(sx),rr(dcy),sr,0,Math.PI,false);
+    ctx.fill();
+    ctx.strokeStyle='rgba(0,0,0,0.12)'; ctx.lineWidth=0.8;
+    ctx.beginPath(); ctx.arc(rr(sx),rr(dcy),sr,0,Math.PI,false); ctx.stroke();
+  }
+
+  // ハイライト（ふわっと光沢）
+  const gl=ctx.createRadialGradient(rr(px-R*0.25),rr(dcy-R*0.4),1,rr(px),rr(dcy),R);
+  gl.addColorStop(0,'rgba(255,255,255,0.55)');
+  gl.addColorStop(0.5,'rgba(255,255,255,0.08)');
+  gl.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.fillStyle=gl;
+  ctx.beginPath(); ctx.arc(rr(px),rr(dcy),R,Math.PI,0); ctx.closePath(); ctx.fill();
+
+  // てっぺんのノブ
+  ctx.fillStyle='#FFFFFF';
+  ctx.beginPath(); ctx.arc(rr(px),rr(dcy-R+2),4,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#FFD0E8';
+  ctx.beginPath(); ctx.arc(rr(px),rr(dcy-R+2),2.5,0,Math.PI*2); ctx.fill();
 }
 
 function drawPlayer(py,frame,invuln,lv){
@@ -1047,7 +1070,9 @@ function drawPlayer(py,frame,invuln,lv){
     [-1, 0, 2, 3,  2, -2,-3],
   ];
   const fr=Math.floor(frame/7)%4;
-  const [flx,fly,blx,bly,bob,fay,bay]=isJump?[2,-5,-2,-5,0,-4,-4]:RF[fr];
+  // 凧浮遊中：腕を上げてぶら下がりポーズ・足は下にダラン
+  const isKiteFloat=typeof kiteActive!=='undefined'&&kiteActive;
+  const [flx,fly,blx,bly,bob,fay,bay]=isKiteFloat?[0,7,0,7,0,-14,-14]:(isJump?[2,-5,-2,-5,0,-4,-4]:RF[fr]);
   const by=py+bob;
   const OL='#080402';
   const cc=lv>=3?(lv>=4?'#6A0C0C':'#184A8A'):lv<=0?'#9A7848':'#7A4818';
