@@ -134,6 +134,7 @@ const SFX={
   kick: ()=>{beep(220,0.06,'sawtooth',0.14);setTimeout(()=>beep(310,0.09,'square',0.09),35);},
   creak:()=>{[0,55,115].forEach((t,i)=>setTimeout(()=>beep(165-i*22,0.13,'sawtooth',0.05+i*0.01),t));},
   thud: ()=>beep(50,0.30,'sawtooth',0.22),
+  neigh:()=>{beep(440,0.12,'sawtooth',0.18);setTimeout(()=>beep(523,0.18,'sawtooth',0.14),80);setTimeout(()=>beep(392,0.22,'square',0.10),200);},
 };
 
 // BGM system (和風ヨナ抜き音階)
@@ -586,6 +587,7 @@ function updateEnding(){
     endFade=1;
   } else {
     state='clear';
+    initClearParticles();
     if(clearRank===0)
       [523,659,784,1047,1319].forEach((f,i)=>setTimeout(()=>beep(f,0.40,'triangle',0.15),i*150));
     else
@@ -2063,6 +2065,7 @@ let items,lostItems,clearRank,npcPopT,npcPopMsg,npcPopPMsg,npcPopX,mikanUsed;
 let platforms,platSpawnD,platZigzag;
 let stageTransT,prevStageIdx,kickT,kickHoldT,kickHolding;
 let goalWarn1,goalWarn2,paused;
+let horseFlashT,clearParts;
 function saveBest(){
   try{
     const b=JSON.parse(localStorage.getItem('warashibe_best')||'null');
@@ -2482,13 +2485,14 @@ function drawBridgeLogs(){
 function update(){
   frame++;
   dist+=speed*0.1;
-  speed=Math.min(9, 5+dist*0.001); // slower acceleration, lower cap for journey feel
+  speed=items&&items[4]?Math.min(13,7+dist*0.001):Math.min(9,5+dist*0.001);
 
   let si=0;
   for(let i=STAGES.length-1;i>=0;i--){if(dist>=STAGES[i].minD){si=i;break;}}
   if(si!==prevStageIdx){stageTransT=180;}
   prevStageIdx=si; stageIdx=si;
   if(stageTransT>0) --stageTransT;
+  if(horseFlashT>0) --horseFlashT;
 
   // Release player if platform scrolled away
   if(grounded&&py<GY-46){
@@ -2706,13 +2710,13 @@ function update(){
           if(items[ci]){
             npcPopMsg=CHAIN[ci].name+'はもう持ってる！'; npcPopPMsg='ありがとう！';
           } else if(hr===ci-1){
-            // 交換演出（でも失わない）
             items[ci]=true; lostItems[ci]=false;
+            if(ci===4){horseFlashT=90;SFX.neigh();}
             npcPopMsg=(['わら→アブに交換しよう！','アブ→みかん交換しよう！','みかん→布に交換しよう！','布→馬に交換しよう！'])[ci-1]||'交換しよう！';
             npcPopPMsg=(['まじで!? うれしい！','うそっ!? すごい！','布まで！最高！','馬！！夢みたい！'])[ci-1]||'やった！';
           } else if(hr>ci-1){
-            // 上位を持っているので素直にくれる
             items[ci]=true; lostItems[ci]=false;
+            if(ci===4){horseFlashT=90;SFX.neigh();}
             npcPopMsg=CHAIN[ci].name+'をどうぞ！'; npcPopPMsg='え！ありがとう！';
           } else {
             npcPopMsg=(['わらがあれば…','わらがあれば…','アブがあれば…','みかんがあれば…','布があれば…'])[ci]||'まだ早い…';
@@ -2729,6 +2733,7 @@ function update(){
             npcPopPMsg=CHAIN[ci].name+'はもう持ってる…';
           } else if(hr>=ci-1){
             items[ci]=true; lostItems[ci]=false;
+            if(ci===4){horseFlashT=90;SFX.neigh();}
             npcPopPMsg=CHAIN[ci].name+'を拾った！';
           } else {
             npcPopPMsg='まだ手に入らない…';
@@ -3091,43 +3096,125 @@ function drawClearChar(rank,cx,cy){
   ctx.restore();
 }
 
+const FWORKS=[
+  {x:GW*0.22,y:GH*0.18,col:'#FF6060',period:90,offset:0},
+  {x:GW*0.78,y:GH*0.14,col:'#60CCFF',period:110,offset:30},
+  {x:GW*0.50,y:GH*0.10,col:'#FFD700',period:130,offset:55},
+  {x:GW*0.15,y:GH*0.35,col:'#FF80FF',period:100,offset:20},
+  {x:GW*0.85,y:GH*0.30,col:'#80FF80',period:120,offset:70},
+];
+const PCOLS=['#FFD700','#FF6060','#60CCFF','#FF80FF','#80FF80','#FFA040','#C0FF60'];
+
+function initClearParticles(){
+  clearParts=[];
+  for(let i=0;i<70;i++){
+    clearParts.push({
+      x:GW*0.1+Math.random()*GW*0.8,
+      y:GH*0.05+Math.random()*GH*0.2,
+      vx:(Math.random()-0.5)*2.2,
+      vy:Math.random()*1.4+0.3,
+      col:PCOLS[Math.floor(Math.random()*PCOLS.length)],
+      w:4+Math.floor(Math.random()*5),
+      h:3+Math.floor(Math.random()*4),
+      rot:Math.random()*Math.PI*2,
+      rspeed:(Math.random()-0.5)*0.18,
+      alpha:0.9+Math.random()*0.1,
+    });
+  }
+}
+
 function drawClearScreen(){
   const R=RANKS[clearRank];
-  ctx.fillStyle='rgba(14,8,0,0.92)'; ctx.fillRect(0,0,GW,GH);
-  ctx.strokeStyle=`rgba(220,180,0,0.65)`; ctx.lineWidth=3; ctx.strokeRect(10,10,GW-20,GH-20);
-  ctx.strokeStyle=`rgba(220,180,0,0.25)`; ctx.lineWidth=1; ctx.strokeRect(14,14,GW-28,GH-28);
+
+  // 背景
+  ctx.fillStyle='rgba(14,8,0,0.93)'; ctx.fillRect(0,0,GW,GH);
+
+  // 花火
+  for(const fw of FWORKS){
+    const t=(frame+fw.offset)%fw.period;
+    const prog=t/fw.period;
+    if(prog<0.55){
+      const r=prog*2*62;
+      const alpha=(1-prog*1.8)*0.85;
+      if(alpha>0){
+        ctx.globalAlpha=alpha;
+        ctx.strokeStyle=fw.col; ctx.lineWidth=2;
+        const spokes=8;
+        for(let s=0;s<spokes;s++){
+          const a=s/spokes*Math.PI*2;
+          ctx.beginPath();
+          ctx.moveTo(fw.x,fw.y);
+          ctx.lineTo(fw.x+Math.cos(a)*r,fw.y+Math.sin(a)*r);
+          ctx.stroke();
+        }
+        ctx.fillStyle=fw.col;
+        ctx.beginPath(); ctx.arc(fw.x,fw.y,r*0.08+3,0,Math.PI*2); ctx.fill();
+        ctx.globalAlpha=1;
+      }
+    }
+  }
+
+  // 紙吹雪
+  if(clearParts){
+    for(const p of clearParts){
+      p.x+=p.vx; p.y+=p.vy; p.rot+=p.rspeed;
+      if(p.y>GH+10){p.y=-10; p.x=GW*0.1+Math.random()*GW*0.8;}
+      ctx.save();
+      ctx.translate(p.x,p.y); ctx.rotate(p.rot);
+      ctx.globalAlpha=p.alpha;
+      ctx.fillStyle=p.col;
+      ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);
+      ctx.globalAlpha=1; ctx.restore();
+    }
+  }
+
+  // 金枠
+  ctx.strokeStyle='rgba(220,180,0,0.75)'; ctx.lineWidth=3; ctx.strokeRect(10,10,GW-20,GH-20);
+  ctx.strokeStyle='rgba(220,180,0,0.30)'; ctx.lineWidth=1; ctx.strokeRect(14,14,GW-28,GH-28);
 
   ctx.textAlign='center';
-  ctx.shadowColor=R.col; ctx.shadowBlur=18;
-  ctx.fillStyle=R.col; ctx.font='bold 32px monospace';
-  ctx.fillText(R.title,GW/2,rr(GH*0.16));
+  // ランクタイトル（パルス）
+  const pulse=0.85+0.15*Math.sin(frame*0.10);
+  ctx.shadowColor=R.col; ctx.shadowBlur=22*pulse;
+  ctx.fillStyle=R.col; ctx.font='bold 34px monospace';
+  ctx.fillText(R.title,GW/2,rr(GH*0.17));
   ctx.shadowBlur=0;
-  ctx.fillStyle='rgba(220,200,160,0.70)'; ctx.font='12px monospace';
-  ctx.fillText(R.sub,GW/2,rr(GH*0.22));
+  ctx.fillStyle='rgba(220,200,160,0.75)'; ctx.font='12px monospace';
+  ctx.fillText(R.sub,GW/2,rr(GH*0.23));
 
-  ctx.fillStyle='rgba(240,180,0,0.40)'; ctx.fillRect(GW/2-110,rr(GH*0.26),220,2);
+  ctx.fillStyle='rgba(240,180,0,0.45)'; ctx.fillRect(GW/2-110,rr(GH*0.27),220,2);
   ctx.fillStyle='#E0C880'; ctx.font='11px monospace';
   const haveNames=CHAIN.filter((_,i)=>items[i]).map(c=>c.name).join('・');
-  ctx.fillText('所持：'+haveNames,GW/2,rr(GH*0.31));
+  ctx.fillText('所持：'+haveNames,GW/2,rr(GH*0.32));
   ctx.fillStyle='#F0D060'; ctx.font='bold 12px monospace';
-  ctx.fillText('旅の歩み：'+Math.floor(dist)+' 歩',GW/2,rr(GH*0.37));
+  ctx.fillText('旅の歩み：'+Math.floor(dist)+' 歩',GW/2,rr(GH*0.38));
 
+  // Rankグレード（大きくパルス）
   const grades=['SS','S','A','B','C','D','E','F','--'];
-  ctx.shadowColor=R.col; ctx.shadowBlur=12;
-  ctx.fillStyle=R.col; ctx.font='bold 26px monospace';
-  ctx.fillText('Rank '+grades[clearRank],GW/2,rr(GH*0.47));
-  ctx.shadowBlur=0;
+  const gs=1+0.06*Math.sin(frame*0.13);
+  ctx.save(); ctx.translate(GW/2,rr(GH*0.49)); ctx.scale(gs,gs);
+  ctx.shadowColor=R.col; ctx.shadowBlur=18*pulse;
+  ctx.fillStyle=R.col; ctx.font='bold 30px monospace';
+  ctx.fillText('Rank '+grades[clearRank],0,0);
+  ctx.shadowBlur=0; ctx.restore();
 
-  ctx.fillStyle='rgba(240,180,0,0.40)'; ctx.fillRect(GW/2-110,rr(GH*0.52),220,2);
+  ctx.fillStyle='rgba(240,180,0,0.45)'; ctx.fillRect(GW/2-110,rr(GH*0.54),220,2);
   // ベスト記録
   const best=loadBest();
   if(best){
-    const grades=['SS','S','A','B','C','D','E','F','--'];
-    const isNewBest=best.rank===clearRank&&best.dist===Math.floor(dist)||best.rank>clearRank;
-    ctx.fillStyle=isNewBest?'#F0C820':'rgba(200,180,120,0.70)';
-    ctx.font=(isNewBest?'bold ':'')+'10px monospace'; ctx.textAlign='center';
-    ctx.fillText((isNewBest?'★ NEW BEST！  ':'最高記録：')+'Rank '+grades[best.rank]+'  '+best.dist+'歩',GW/2,rr(GH*0.57));
+    const isNewBest=best.rank>clearRank||(best.rank===clearRank&&best.dist===Math.floor(dist));
+    if(isNewBest){
+      const nb=0.7+0.3*Math.sin(frame*0.20);
+      ctx.shadowColor='#FFD700'; ctx.shadowBlur=14*nb;
+      ctx.fillStyle='#F0C820'; ctx.font='bold 11px monospace';
+      ctx.fillText('★ NEW BEST！',GW/2,rr(GH*0.59));
+      ctx.shadowBlur=0;
+    }
+    ctx.fillStyle=isNewBest?'#F0D860':'rgba(200,180,120,0.75)';
+    ctx.font=(isNewBest?'bold ':'')+'10px monospace';
+    ctx.fillText('Rank '+grades[best.rank]+'  '+best.dist+'歩',GW/2,rr(GH*0.63));
   }
+
   drawClearChar(clearRank, GW/2, rr(GH*0.80));
 
   if(Math.floor(Date.now()/600)%2===0){
@@ -3376,7 +3463,7 @@ function loop(){
       drawPlayer(py,frame,invuln,items.filter(Boolean).length-1);
       ctx.shadowBlur=0; ctx.shadowColor='transparent';
       ctx.restore();
-      if(!paused) drawSpeedLines(speed,frame);
+      if(!paused) drawSpeedLines(items&&items[4]?13:speed,frame);
       drawNpcPopup();
       drawBridgeDebris();
       if(bridgeActive) drawBridgeLogs();
@@ -3398,6 +3485,35 @@ function loop(){
       if(paused) drawPauseScreen();
       drawStageTransition();
       drawMessage();
+      // ゴール前の盛り上がり演出
+      const gp=dist/GOAL_DIST;
+      if(gp>=0.82){
+        const gt=Math.min(1,(gp-0.82)/0.18);
+        const pls=0.85+0.15*Math.sin(frame*0.12);
+        ctx.fillStyle=`rgba(240,150,0,${gt*0.11*pls})`;
+        ctx.fillRect(0,0,GW,GH);
+      }
+      if(gp>=0.95){
+        const gt2=Math.min(1,(gp-0.95)/0.05);
+        const rg=ctx.createRadialGradient(GW/2,GH/2,GH*0.1,GW/2,GH/2,GH*0.7);
+        rg.addColorStop(0,'rgba(0,0,0,0)');
+        rg.addColorStop(1,`rgba(240,120,0,${gt2*0.28})`);
+        ctx.fillStyle=rg; ctx.fillRect(0,0,GW,GH);
+      }
+      // 馬フラッシュ演出
+      if(horseFlashT>0){
+        const t=horseFlashT/90;
+        if(horseFlashT>60){
+          ctx.fillStyle=`rgba(255,220,0,${t*0.45})`; ctx.fillRect(0,0,GW,GH);
+        }
+        ctx.textAlign='center';
+        const sc=horseFlashT>60?1+(1-t)*0.8:t*0.9+0.1;
+        ctx.save(); ctx.translate(GW/2,GH*0.38); ctx.scale(sc,sc);
+        ctx.shadowColor='#FFAA00'; ctx.shadowBlur=20*(horseFlashT>60?1-t:t);
+        ctx.fillStyle=horseFlashT>60?'#3A1800':'#FFD700';
+        ctx.font='bold 22px monospace'; ctx.fillText('馬！！全力疾走！！',0,0);
+        ctx.shadowBlur=0; ctx.restore(); ctx.textAlign='left';
+      }
     } else if(state==='gameover'){
       drawPlayer(py,frame,false,items?items.filter(Boolean).length-1:0);
       drawGameOverScreen();
