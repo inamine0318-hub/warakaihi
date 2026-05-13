@@ -134,19 +134,71 @@ const SFX={
   kick:()=>{beep(220,0.06,'sawtooth',0.14);setTimeout(()=>beep(310,0.09,'square',0.09),35);},
 };
 
+// BGM system (和風ヨナ抜き音階)
+const BGM=(()=>{
+  let _on=false,_step=0,_bi=0,_id=0,_to=null;
+  // D minor pentatonic: D4 F4 G4 A4 C5
+  const _seq=[
+    [392,150],[440,150],[523,160],[440,170],
+    [392,150],[349,160],[392,200],[392,270],
+    [440,150],[523,150],[440,150],[392,170],
+    [349,160],[294,160],[349,200],[392,310],
+  ];
+  const _bas=[[147,590],[220,590],[147,590],[196,590]];
+  function _n(f,d,t,v){
+    try{
+      if(!aCtx)return;
+      const o=aCtx.createOscillator(),g=aCtx.createGain();
+      o.connect(g);g.connect(aCtx.destination);
+      o.type=t;o.frequency.value=f;
+      g.gain.setValueAtTime(v,aCtx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001,aCtx.currentTime+d/1000*0.83);
+      o.start(aCtx.currentTime);o.stop(aCtx.currentTime+d/1000);
+    }catch(e){}
+  }
+  function _tick(){
+    if(!_on)return;
+    const s=_step;const[mf,md]=_seq[s];
+    _n(mf,md,'triangle',0.052);
+    if(s%4===0){const[bf,bd]=_bas[(_bi++)%_bas.length];_n(bf,bd,'sawtooth',0.036);}
+    _step=(s+1)%_seq.length;
+    const id=++_id;
+    _to=setTimeout(()=>{if(_id===id)_tick();},md);
+  }
+  return{
+    start(){
+      if(_on)this.stop();_on=true;_step=0;_bi=0;
+      if(!aCtx)try{aCtx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}
+      if(aCtx&&aCtx.state==='suspended')aCtx.resume().then(()=>_tick()).catch(()=>{});
+      else _tick();
+    },
+    stop(){_on=false;_id++;if(_to){clearTimeout(_to);_to=null;}},
+    pause(){_id++;if(_to){clearTimeout(_to);_to=null;}},
+    resume(){if(!_on)return;if(aCtx&&aCtx.state==='suspended')aCtx.resume().then(()=>_tick()).catch(()=>{});else _tick();},
+  };
+})();
+
 const rr=n=>Math.round(n);
 const KICK_HOLD=24,KICK_DUR=22;
 
 // ══════════════════════════════════════════════════════════
 // DRAW: BACKGROUND
 // ══════════════════════════════════════════════════════════
+const _skyGradCache={};
+function getSkyGrad(si){
+  if(!_skyGradCache[si]){
+    const s=STAGES[si];
+    const g=ctx.createLinearGradient(0,0,0,GY);
+    g.addColorStop(0,s.sky); g.addColorStop(1,s.hor);
+    _skyGradCache[si]=g;
+  }
+  return _skyGradCache[si];
+}
 function drawBG(dist,si){
   const s=STAGES[si];
 
-  // Sky
-  const sky=ctx.createLinearGradient(0,0,0,GY);
-  sky.addColorStop(0,s.sky); sky.addColorStop(1,s.hor);
-  ctx.fillStyle=sky; ctx.fillRect(0,0,GW,GY);
+  // Sky（グラデーションをキャッシュして再利用）
+  ctx.fillStyle=getSkyGrad(si); ctx.fillRect(0,0,GW,GY);
 
   // Celestial bodies (positions relative to GW/GY)
   if(si===0){
@@ -613,9 +665,9 @@ function drawPlayerOnHorse(py,frame,invuln,lv){
   if(invuln&&Math.floor(frame/5)%2===0) return;
   const x=PX, OL='#080402';
   const sk='#DEAA58', skS='#B88030';
-  const cc=lv>=4?'#6A0C0C':'#7A4818';
-  const cs=lv>=4?'#3A0404':'#4A2E0A';
-  const ch=lv>=4?'#8A1010':'#A46428';
+  const cc=lv>=3?(lv>=4?'#6A0C0C':'#184A8A'):lv<=0?'#9A7848':'#7A4818';
+  const cs=lv>=3?(lv>=4?'#3A0404':'#0C2C5A'):lv<=0?'#6A5030':'#4A2E0A';
+  const ch=lv>=3?(lv>=4?'#8A1010':'#2A6AB0'):lv<=0?'#B89060':'#A46428';
   const hf=Math.floor(frame/4)%4;
   const HA=[[-4,3,0],[0,5,1],[4,-3,0],[0,-5,-1]];
   const [fdy,bdy,hbob]=HA[hf];
@@ -625,96 +677,136 @@ function drawPlayerOnHorse(py,frame,invuln,lv){
   ctx.fillRect(rr(x-10),GY+1,56,2);
   ctx.fillRect(rr(x-12),GY+2,60,1);
 
-  // Horse body（丸みを持たせた胴体）
+  // Horse body（バレル型・背中アーチ・腹サグ）
   const hby=py+22+hbob;
+  // アウトライン - 段階的な幅でバレル形状
   ctx.fillStyle=OL;
-  ctx.fillRect(rr(x-6),rr(hby-1),36,2);
-  ctx.fillRect(rr(x-8),rr(hby+1),40,14);
-  ctx.fillRect(rr(x-6),rr(hby+15),36,2);
+  ctx.fillRect(rr(x-2),rr(hby-3),30,2);   // 背中アーチ頂点
+  ctx.fillRect(rr(x-6),rr(hby-1),38,2);   // 上部
+  ctx.fillRect(rr(x-9),rr(hby+1),44,4);   // 上胴
+  ctx.fillRect(rr(x-10),rr(hby+5),46,6);  // 胴中央（最幅）
+  ctx.fillRect(rr(x-9),rr(hby+11),44,3);  // 下胴
+  ctx.fillRect(rr(x-6),rr(hby+14),38,2);  // 腹
+  ctx.fillRect(rr(x-2),rr(hby+16),10,2);  // 前腹
+  ctx.fillRect(rr(x+20),rr(hby+16),12,2); // 後腹
+  // 塗り
   ctx.fillStyle='#7A3A10';
-  ctx.fillRect(rr(x-7),rr(hby),38,16);
+  ctx.fillRect(rr(x-3),rr(hby-2),28,3);   // アーチ部
+  ctx.fillRect(rr(x-8),rr(hby),42,15);    // 本体
+  // ハイライト（背中）
   ctx.fillStyle='#9A5028';
-  ctx.fillRect(rr(x-7),rr(hby),38,5);
-  ctx.fillStyle='#5A2808';
-  ctx.fillRect(rr(x-7),rr(hby+10),38,5);
+  ctx.fillRect(rr(x-8),rr(hby),42,4);
+  // 中間
   ctx.fillStyle='#8A4820';
-  ctx.fillRect(rr(x-7),rr(hby+5),38,5);
+  ctx.fillRect(rr(x-8),rr(hby+4),42,5);
+  // 腹影
+  ctx.fillStyle='#5A2808';
+  ctx.fillRect(rr(x-8),rr(hby+9),42,5);
+  // 背中の筋（縦線）
+  ctx.fillStyle='#6A3010';
+  ctx.fillRect(rr(x+10),rr(hby-1),2,14);
 
-  // Horse tail
-  const tsway=Math.round(Math.sin(frame*0.20)*2);
+  // Horse tail（流れるような尾）
+  const tsway=Math.round(Math.sin(frame*0.20)*3);
   ctx.fillStyle=OL;
-  ctx.fillRect(rr(x-12+tsway),rr(hby+2),8,14);
+  ctx.fillRect(rr(x-12+tsway),rr(hby+0),9,5);
+  ctx.fillRect(rr(x-14+tsway),rr(hby+5),9,6);
+  ctx.fillRect(rr(x-16+tsway),rr(hby+11),8,6);
+  ctx.fillRect(rr(x-14+tsway),rr(hby+17),6,4);
   ctx.fillStyle='#3A1A08';
-  ctx.fillRect(rr(x-11+tsway),rr(hby+3),6,12);
+  ctx.fillRect(rr(x-11+tsway),rr(hby+1),7,4);
+  ctx.fillRect(rr(x-13+tsway),rr(hby+5),7,5);
+  ctx.fillRect(rr(x-15+tsway),rr(hby+10),6,6);
+  ctx.fillRect(rr(x-13+tsway),rr(hby+16),4,4);
   ctx.fillStyle='#5A2C0E';
-  ctx.fillRect(rr(x-11+tsway),rr(hby+4),2,8);
+  ctx.fillRect(rr(x-11+tsway),rr(hby+2),2,6);
+  ctx.fillRect(rr(x-13+tsway),rr(hby+8),2,6);
 
-  // Horse legs
-  const fty=hby+12;
-  const fH=(n)=>Math.max(2,Math.min(20,GY-fty-n+2));
+  // Horse legs（細め・蹄あり）
+  const fty=hby+13;
+  const fH=(n)=>Math.max(2,Math.min(22,GY-fty-n+2));
+  // 後ろ足2本
   ctx.fillStyle=OL;
-  ctx.fillRect(rr(x-6),rr(fty+bdy)-1,6,fH(bdy)+1);
+  ctx.fillRect(rr(x-6),rr(fty+bdy)-1,5,fH(bdy)+1);
   ctx.fillStyle='#6A2E0A';
-  ctx.fillRect(rr(x-5),rr(fty+bdy),4,fH(bdy)-1);
+  ctx.fillRect(rr(x-5),rr(fty+bdy),3,fH(bdy)-1);
+  ctx.fillStyle='#3A1608'; ctx.fillRect(rr(x-5),rr(fty+bdy),1,fH(bdy)-1);
   ctx.fillStyle=OL;
-  ctx.fillRect(rr(x+1),rr(fty+Math.round(bdy/2))-1,6,fH(Math.round(bdy/2))+1);
+  ctx.fillRect(rr(x+1),rr(fty+Math.round(bdy/2))-1,5,fH(Math.round(bdy/2))+1);
   ctx.fillStyle='#6A2E0A';
-  ctx.fillRect(rr(x+2),rr(fty+Math.round(bdy/2)),4,fH(Math.round(bdy/2))-1);
+  ctx.fillRect(rr(x+2),rr(fty+Math.round(bdy/2)),3,fH(Math.round(bdy/2))-1);
+  ctx.fillStyle='#3A1608'; ctx.fillRect(rr(x+2),rr(fty+Math.round(bdy/2)),1,fH(Math.round(bdy/2))-1);
+  // 前足2本
   ctx.fillStyle=OL;
-  ctx.fillRect(rr(x+14),rr(fty+fdy)-1,6,fH(fdy)+1);
+  ctx.fillRect(rr(x+14),rr(fty+fdy)-1,5,fH(fdy)+1);
   ctx.fillStyle='#6A2E0A';
-  ctx.fillRect(rr(x+15),rr(fty+fdy),4,fH(fdy)-1);
+  ctx.fillRect(rr(x+15),rr(fty+fdy),3,fH(fdy)-1);
+  ctx.fillStyle='#3A1608'; ctx.fillRect(rr(x+15),rr(fty+fdy),1,fH(fdy)-1);
   ctx.fillStyle=OL;
-  ctx.fillRect(rr(x+20),rr(fty+Math.round(fdy/2))-1,6,fH(Math.round(fdy/2))+1);
+  ctx.fillRect(rr(x+20),rr(fty+Math.round(fdy/2))-1,5,fH(Math.round(fdy/2))+1);
   ctx.fillStyle='#6A2E0A';
-  ctx.fillRect(rr(x+21),rr(fty+Math.round(fdy/2)),4,fH(Math.round(fdy/2))-1);
+  ctx.fillRect(rr(x+21),rr(fty+Math.round(fdy/2)),3,fH(Math.round(fdy/2))-1);
+  ctx.fillStyle='#3A1608'; ctx.fillRect(rr(x+21),rr(fty+Math.round(fdy/2)),1,fH(Math.round(fdy/2))-1);
+  // 蹄
   ctx.fillStyle='#1A1008';
-  ctx.fillRect(rr(x-6),GY-2,6,2);
-  ctx.fillRect(rr(x+1),GY-2,6,2);
-  ctx.fillRect(rr(x+14),GY-2,6,2);
-  ctx.fillRect(rr(x+20),GY-2,6,2);
+  ctx.fillRect(rr(x-7),GY-3,7,3);
+  ctx.fillRect(rr(x+0),GY-3,7,3);
+  ctx.fillRect(rr(x+13),GY-3,7,3);
+  ctx.fillRect(rr(x+19),GY-3,7,3);
 
-  // Horse neck
+  // Horse neck（やや前傾き）
   ctx.fillStyle=OL;
-  ctx.fillRect(rr(x+22),rr(py+6+hbob),10,18);
+  ctx.fillRect(rr(x+20),rr(py+4+hbob),12,20);
   ctx.fillStyle='#7A3A10';
-  ctx.fillRect(rr(x+23),rr(py+7+hbob),8,16);
-  ctx.fillStyle='#3A1A08';
-  ctx.fillRect(rr(x+22),rr(py+6+hbob),3,16);
-
-  // Horse ears（ぴょんと立った耳）
-  ctx.fillStyle=OL;
-  ctx.fillRect(rr(x+30),rr(py-8+hbob),4,7);
-  ctx.fillRect(rr(x+36),rr(py-7+hbob),4,6);
-  ctx.fillStyle='#7A3A10';
-  ctx.fillRect(rr(x+31),rr(py-7+hbob),2,5);
-  ctx.fillRect(rr(x+37),rr(py-6+hbob),2,4);
-  ctx.fillStyle='#D07060';
-  ctx.fillRect(rr(x+31),rr(py-6+hbob),1,3);
-  ctx.fillRect(rr(x+37),rr(py-5+hbob),1,2);
-
-  // Horse head（丸みのある顔）
-  ctx.fillStyle=OL;
-  ctx.fillRect(rr(x+28),rr(py-2+hbob),2,1);
-  ctx.fillRect(rr(x+27),rr(py-1+hbob),16,12);
-  ctx.fillRect(rr(x+28),rr(py+11+hbob),14,1);
-  ctx.fillStyle='#7A3A10';
-  ctx.fillRect(rr(x+28),rr(py-1+hbob),14,12);
+  ctx.fillRect(rr(x+21),rr(py+5+hbob),10,18);
   ctx.fillStyle='#9A5028';
-  ctx.fillRect(rr(x+28),rr(py-1+hbob),14,4);
+  ctx.fillRect(rr(x+23),rr(py+5+hbob),6,18); // 明るい面
   ctx.fillStyle='#3A1A08';
-  ctx.fillRect(rr(x+28),rr(py-1+hbob),3,10);
-  // 目（可愛い丸目）
+  ctx.fillRect(rr(x+21),rr(py+5+hbob),3,18); // 影面
+
+  // Horse ears（尖った耳）
   ctx.fillStyle=OL;
-  ctx.fillRect(rr(x+36),rr(py+1+hbob),5,5);
+  ctx.fillRect(rr(x+28),rr(py-10+hbob),5,8);
+  ctx.fillRect(rr(x+35),rr(py-8+hbob),5,7);
+  ctx.fillStyle='#7A3A10';
+  ctx.fillRect(rr(x+29),rr(py-9+hbob),3,6);
+  ctx.fillRect(rr(x+36),rr(py-7+hbob),3,5);
+  ctx.fillStyle='#D07060';
+  ctx.fillRect(rr(x+30),rr(py-8+hbob),1,4);
+  ctx.fillRect(rr(x+37),rr(py-6+hbob),1,3);
+
+  // Horse head（細長い馬らしい顔）
+  ctx.fillStyle=OL;
+  // 額〜鼻梁
+  ctx.fillRect(rr(x+26),rr(py-3+hbob),3,1);
+  ctx.fillRect(rr(x+25),rr(py-2+hbob),16,14);
+  ctx.fillRect(rr(x+26),rr(py+12+hbob),14,1);
+  // 鼻先（前方に突き出す）
+  ctx.fillRect(rr(x+36),rr(py+5+hbob),6,9);
+  ctx.fillRect(rr(x+37),rr(py+14+hbob),5,2);
+  ctx.fillStyle='#7A3A10';
+  ctx.fillRect(rr(x+26),rr(py-2+hbob),14,13);
+  ctx.fillRect(rr(x+37),rr(py+6+hbob),4,8);
+  ctx.fillStyle='#9A5028'; // 額ハイライト
+  ctx.fillRect(rr(x+28),rr(py-2+hbob),10,4);
+  ctx.fillStyle='#3A1A08'; // 影（首側）
+  ctx.fillRect(rr(x+26),rr(py-2+hbob),4,13);
+  ctx.fillStyle='#5A2808'; // 鼻先の陰
+  ctx.fillRect(rr(x+37),rr(py+10+hbob),4,4);
+  // 馬の目（小さな黒点）
   ctx.fillStyle='#0A0604';
-  ctx.fillRect(rr(x+37),rr(py+2+hbob),3,3);
+  ctx.fillRect(rr(x+35),rr(py+1+hbob),3,3);
   ctx.fillStyle='#FFFFFF';
-  ctx.fillRect(rr(x+37),rr(py+2+hbob),1,1);
-  // 鼻孔
-  ctx.fillStyle='#3A1808';
-  ctx.fillRect(rr(x+40),rr(py+7+hbob),3,2);
-  ctx.fillRect(rr(x+41),rr(py+8+hbob),1,1);
+  ctx.fillRect(rr(x+35),rr(py+1+hbob),1,1);
+  // 鼻孔（大き目）
+  ctx.fillStyle='#2A1006';
+  ctx.fillRect(rr(x+38),rr(py+8+hbob),3,3);
+  ctx.fillRect(rr(x+39),rr(py+10+hbob),2,2);
+  ctx.fillStyle='#5A2010';
+  ctx.fillRect(rr(x+38),rr(py+9+hbob),2,1);
+  // 口元
+  ctx.fillStyle='#2A1006';
+  ctx.fillRect(rr(x+38),rr(py+13+hbob),3,1);
 
   // Saddle
   ctx.fillStyle=OL;
@@ -741,6 +833,28 @@ function drawPlayerOnHorse(py,frame,invuln,lv){
   ctx.fillRect(rr(x+3),rr(py+2),4,12);
   ctx.fillStyle=cs;
   ctx.fillRect(rr(x+14),rr(py+2),5,12);
+  if(lv<=0){
+    ctx.fillStyle='#6A3E18';
+    ctx.fillRect(rr(x+7),rr(py+3),5,5); ctx.fillRect(rr(x+11),rr(py+9),4,4);
+    ctx.fillStyle='#8A5A28';
+    ctx.fillRect(rr(x+7),rr(py+3),5,1); ctx.fillRect(rr(x+7),rr(py+3),1,5);
+    ctx.fillRect(rr(x+11),rr(py+9),4,1); ctx.fillRect(rr(x+11),rr(py+9),1,4);
+  } else if(lv<=2){
+    ctx.fillStyle='#3A2408';
+    ctx.fillRect(rr(x+7),rr(py+4),5,4); ctx.fillRect(rr(x+11),rr(py+9),4,4);
+    ctx.fillStyle='#5C3A10';
+    ctx.fillRect(rr(x+7),rr(py+4),5,1); ctx.fillRect(rr(x+7),rr(py+4),1,4);
+    ctx.fillRect(rr(x+11),rr(py+9),4,1); ctx.fillRect(rr(x+11),rr(py+9),1,4);
+  } else if(lv===3){
+    ctx.fillStyle='#0C3068';
+    ctx.fillRect(rr(x+8),rr(py+3),1,9); ctx.fillRect(rr(x+11),rr(py+3),1,9);
+    ctx.fillRect(rr(x+7),rr(py+5),5,1); ctx.fillRect(rr(x+7),rr(py+9),5,1);
+  } else {
+    ctx.fillStyle='#C89000';
+    ctx.fillRect(rr(x+3),rr(py+2),16,1); ctx.fillRect(rr(x+8),rr(py+4),3,8);
+    ctx.fillStyle='#E0B000';
+    ctx.fillRect(rr(x+8),rr(py+4),3,1); ctx.fillRect(rr(x+8),rr(py+5),1,6);
+  }
   ctx.fillStyle='#D0CC98';
   ctx.fillRect(rr(x+12),rr(py+1),5,6);
   ctx.fillStyle=OL;
@@ -826,16 +940,16 @@ function drawPlayerOnHorse(py,frame,invuln,lv){
   ctx.fillRect(rr(x+3),rr(py+0),5,3);
   ctx.fillRect(rr(x+16),rr(py+0),5,3);
 
-  // Rider eyes (パワプロ風・かわいい黒丸)
-  ctx.fillStyle=OL;
-  ctx.fillRect(rr(x+4),rr(py-7),7,7);
-  ctx.fillRect(rr(x+15),rr(py-7),7,7);
+  // Rider eyes（ネス風・小さな点）
   ctx.fillStyle='#0A0604';
-  ctx.fillRect(rr(x+5),rr(py-6),5,5);
-  ctx.fillRect(rr(x+16),rr(py-6),5,5);
+  ctx.fillRect(rr(x+6),rr(py-5),3,3);
+  ctx.fillRect(rr(x+16),rr(py-5),3,3);
   ctx.fillStyle='#FFFFFF';
-  ctx.fillRect(rr(x+5),rr(py-6),2,2);
-  ctx.fillRect(rr(x+16),rr(py-6),2,2);
+  ctx.fillRect(rr(x+6),rr(py-5),1,1);
+  ctx.fillRect(rr(x+16),rr(py-5),1,1);
+  // 鼻
+  ctx.fillStyle='#8A4820';
+  ctx.fillRect(rr(x+11),rr(py-1),2,1);
 
   // Hat (amigasa, same as drawPlayer)
   ctx.fillStyle=OL;
@@ -880,9 +994,9 @@ function drawPlayer(py,frame,invuln,lv){
   const [flx,fly,blx,bly,bob,fay,bay]=isJump?[2,-5,-2,-5,0,-4,-4]:RF[fr];
   const by=py+bob;
   const OL='#080402';
-  const cc=lv>=4?'#6A0C0C':'#7A4818';
-  const cs=lv>=4?'#3A0404':'#4A2E0A';
-  const ch=lv>=4?'#8A1010':'#A46428';
+  const cc=lv>=3?(lv>=4?'#6A0C0C':'#184A8A'):lv<=0?'#9A7848':'#7A4818';
+  const cs=lv>=3?(lv>=4?'#3A0404':'#0C2C5A'):lv<=0?'#6A5030':'#4A2E0A';
+  const ch=lv>=3?(lv>=4?'#8A1010':'#2A6AB0'):lv<=0?'#B89060':'#A46428';
   const sk='#DEAA58';
   const skS='#B88030';
 
@@ -944,13 +1058,30 @@ function drawPlayer(py,frame,invuln,lv){
   ctx.fillStyle=cc;  ctx.fillRect(rr(x+2),rr(by+11),17,12);
   ctx.fillStyle=ch;  ctx.fillRect(rr(x+2),rr(by+11),5,12);
   ctx.fillStyle=cs;  ctx.fillRect(rr(x+15),rr(by+11),4,12);
-  if(lv<4){
+  if(lv<=0){
+    ctx.fillStyle='#6A3E18';
+    ctx.fillRect(rr(x+7),rr(by+12),6,5); ctx.fillRect(rr(x+12),rr(by+18),4,4);
+    ctx.fillStyle='#8A5A28';
+    ctx.fillRect(rr(x+7),rr(by+12),6,1); ctx.fillRect(rr(x+7),rr(by+12),1,5);
+    ctx.fillRect(rr(x+12),rr(by+18),4,1); ctx.fillRect(rr(x+12),rr(by+18),1,4);
+    ctx.fillStyle='#4A2808';
+    ctx.fillRect(rr(x+9),rr(by+16),3,2);
+  } else if(lv<=2){
     ctx.fillStyle='#3A2408';
-    ctx.fillRect(rr(x+8),rr(by+13),5,4);
-    ctx.fillRect(rr(x+13),rr(by+17),4,4);
+    ctx.fillRect(rr(x+8),rr(by+13),5,4); ctx.fillRect(rr(x+13),rr(by+17),4,4);
     ctx.fillStyle='#5C3A10';
     ctx.fillRect(rr(x+8),rr(by+13),5,1); ctx.fillRect(rr(x+8),rr(by+13),1,4);
     ctx.fillRect(rr(x+13),rr(by+17),4,1); ctx.fillRect(rr(x+13),rr(by+17),1,4);
+  } else if(lv===3){
+    ctx.fillStyle='#0C3068';
+    ctx.fillRect(rr(x+8),rr(by+12),1,10); ctx.fillRect(rr(x+11),rr(by+12),1,10);
+    ctx.fillRect(rr(x+14),rr(by+12),1,10);
+    ctx.fillRect(rr(x+7),rr(by+14),8,1); ctx.fillRect(rr(x+7),rr(by+18),8,1);
+  } else {
+    ctx.fillStyle='#C89000';
+    ctx.fillRect(rr(x+2),rr(by+11),17,1); ctx.fillRect(rr(x+8),rr(by+13),3,8);
+    ctx.fillStyle='#E0B000';
+    ctx.fillRect(rr(x+8),rr(by+13),3,1); ctx.fillRect(rr(x+8),rr(by+14),1,6);
   }
   ctx.fillStyle='#D0CC98'; ctx.fillRect(rr(x+12),rr(by+10),5,7);
   ctx.fillStyle=OL; ctx.fillRect(rr(x+11),rr(by+10),2,7);
@@ -1048,16 +1179,16 @@ function drawPlayer(py,frame,invuln,lv){
   ctx.fillRect(rr(x+3),rr(by+0),5,3);
   ctx.fillRect(rr(x+16),rr(by+0),5,3);
 
-  // 目（パワプロ風・かわいい黒丸）
-  ctx.fillStyle=OL;
-  ctx.fillRect(rr(x+4),rr(by-7),7,7);
-  ctx.fillRect(rr(x+15),rr(by-7),7,7);
+  // 目（ネス風・小さな点）
   ctx.fillStyle='#0A0604';
-  ctx.fillRect(rr(x+5),rr(by-6),5,5);
-  ctx.fillRect(rr(x+16),rr(by-6),5,5);
+  ctx.fillRect(rr(x+6),rr(by-5),3,3);
+  ctx.fillRect(rr(x+16),rr(by-5),3,3);
   ctx.fillStyle='#FFFFFF';
-  ctx.fillRect(rr(x+5),rr(by-6),2,2);
-  ctx.fillRect(rr(x+16),rr(by-6),2,2);
+  ctx.fillRect(rr(x+6),rr(by-5),1,1);
+  ctx.fillRect(rr(x+16),rr(by-5),1,1);
+  // 鼻
+  ctx.fillStyle='#8A4820';
+  ctx.fillRect(rr(x+11),rr(by-1),2,1);
 
   // ══ 編み笠（深く被せ・眉のすぐ上） ══
   ctx.fillStyle=OL;
@@ -1151,7 +1282,7 @@ function drawChainSlots(){
       // ロスト: 赤みのフィルター
       ctx.filter='sepia(1) saturate(4) hue-rotate(310deg)';
     }
-    drawChainIcon(i,0.52);
+    drawChainIcon(i,0.75);
     ctx.filter='none'; ctx.globalAlpha=1;
     ctx.restore();
     // ロストマーク（×）
@@ -1164,6 +1295,21 @@ function drawChainSlots(){
     ctx.fillStyle=has?CHAIN[i].col:lost?'#A05050':'#3A2C1A';
     ctx.font='7px monospace'; ctx.textAlign='center';
     ctx.fillText(CHAIN[i].name,bx+W/2,sy+H+8);
+    // 能力インジケータ（所持時のみ）
+    if(has){
+      const abilityInfo=[
+        {label:'替',col:'#C8A030'}, // わら
+        {label:'防',col:'#2A8808'}, // アブ
+        {label:mikanUsed?'済':'耐',col:mikanUsed?'#664444':'#E87818'}, // みかん
+        {label:'守',col:'#2858C0'}, // ぬの
+        null,                       // うま（能力なし）
+      ][i];
+      if(abilityInfo){
+        ctx.fillStyle=abilityInfo.col+'CC';
+        ctx.font='bold 7px monospace'; ctx.textAlign='center';
+        ctx.fillText(abilityInfo.label,bx+W/2,sy+H+17);
+      }
+    }
     // 矢印
     if(i<4){
       const arrowOn=has&&items[i+1];
@@ -1838,18 +1984,20 @@ function drawNiguruma(x,y){
 }
 
 function drawPlatformItem(cx,y,item,fr){
-  const bx=rr(cx-10+Math.sin(fr*0.10)*2);
-  const by=rr(y-30+Math.sin(fr*0.13)*3);
+  const bx=rr(cx-12+Math.sin(fr*0.10)*2);
+  const by=rr(y-34+Math.sin(fr*0.13)*3);
   if(item.type==='heart'){
     drawHeart(bx,by,fr);
   } else {
     const c=CHAIN[item.chainIdx];
-    ctx.fillStyle=c.col+'44'; ctx.fillRect(bx-5,by-5,30,30);
-    ctx.fillStyle='rgba(10,6,0,0.90)'; ctx.fillRect(bx,by,20,20);
-    ctx.fillStyle=c.col;
-    ctx.fillRect(bx,by,20,2); ctx.fillRect(bx,by+18,20,2);
-    ctx.fillRect(bx,by,2,20); ctx.fillRect(bx+18,by,2,20);
-    ctx.save(); ctx.translate(bx+10,by+11); drawChainIcon(item.chainIdx,0.52); ctx.restore();
+    // 柔らかいグロー（カードなし）
+    const gA=Math.round((0.28+Math.sin(fr*0.13)*0.12)*255).toString(16).padStart(2,'0');
+    ctx.fillStyle=c.col+gA;
+    ctx.beginPath();ctx.arc(bx+12,by+14,20,0,Math.PI*2);ctx.fill();
+    // アイテム本体を直接・大きく描画
+    ctx.save(); ctx.translate(bx+12,by+14);
+    drawChainIcon(item.chainIdx,1.3);
+    ctx.restore();
   }
 }
 
@@ -1876,25 +2024,39 @@ function drawPlatforms(){
 // ══════════════════════════════════════════════════════════
 let state='start';
 let dist,speed,py,vy,grounded,lives,invuln,invT,frame,entities,spawnD,stageIdx,msg,msgT;
-let bridgeActive,bridgeStartDist,bridgeHoles,bridgeDebris,bridgeWarnDone,bridgeDoneMsg;
-let items,lostItems,clearRank,npcPopT,npcPopMsg,npcPopPMsg,npcPopX;
+let bridgeActive,bridgeStartDist,bridgeHoles,bridgeDebris,bridgeLogs,bridgeWarnDone,bridgeDoneMsg;
+let items,lostItems,clearRank,npcPopT,npcPopMsg,npcPopPMsg,npcPopX,mikanUsed;
 let platforms,platSpawnD,platZigzag;
 let stageTransT,prevStageIdx,kickT,kickHoldT,kickHolding;
+let goalWarn1,goalWarn2,paused;
+function saveBest(){
+  try{
+    const b=JSON.parse(localStorage.getItem('warashibe_best')||'null');
+    const n={rank:clearRank,dist:Math.floor(dist)};
+    if(!b||n.rank<b.rank||(n.rank===b.rank&&n.dist>b.dist))
+      localStorage.setItem('warashibe_best',JSON.stringify(n));
+  }catch(e){}
+}
+function loadBest(){
+  try{return JSON.parse(localStorage.getItem('warashibe_best')||'null');}catch(e){return null;}
+}
 let endT,endPlayerX,endFade,endMansionX; // ending cinematic
 
 function initGame(){
   dist=0; speed=5; py=GY-46; vy=0; grounded=true;
   lives=5; invuln=false; invT=0; frame=0;
   entities=[]; spawnD=0; stageIdx=0; msg=''; msgT=0;
-  bridgeActive=false; bridgeStartDist=BRIDGE_EVERY;
+  bridgeActive=false; bridgeStartDist=BRIDGE_EVERY; bridgeLogs=[];
   bridgeHoles=[]; bridgeDebris=[]; bridgeWarnDone=false; bridgeDoneMsg=false;
   items=[true,false,false,false,false];
   lostItems=[false,false,false,false,false];
-  clearRank=4; npcPopT=0; npcPopMsg=''; npcPopPMsg=''; npcPopX=GW*0.6;
+  clearRank=4; npcPopT=0; npcPopMsg=''; npcPopPMsg=''; npcPopX=GW*0.6; mikanUsed=false;
+  goalWarn1=false; goalWarn2=false; paused=false;
   stageTransT=0; prevStageIdx=0; kickT=0; kickHoldT=0; kickHolding=false;
   platforms=[]; platSpawnD=0; platZigzag=0;
   endT=0; endPlayerX=PX; endFade=0; endMansionX=GW+300;
   state='playing';
+  BGM.start();
 }
 
 function spawnEntity(){
@@ -2024,8 +2186,10 @@ function updatePlatforms(){
           else{msg='HP満タン！';msgT=100;}
         } else {
           const ci=p.hasItem.chainIdx;
+          const hr=items.reduce((m,v,i)=>v?i:m,-1);
           if(items[ci]){npcPopMsg=CHAIN[ci].name+'はもう持っている！';}
-          else{items[ci]=true;lostItems[ci]=false;npcPopMsg=CHAIN[ci].name+' を拾った！';}
+          else if(hr>=ci-1){items[ci]=true;lostItems[ci]=false;npcPopMsg=CHAIN[ci].name+' を拾った！';}
+          else{npcPopMsg='まだ手に入らない…';}
           npcPopT=200; SFX.get();
         }
       }
@@ -2042,10 +2206,24 @@ function activateBridge(){
   const total=26;
   bridgeHoles=new Array(total).fill(false);
   let count=0;
-  for(let i=3;i<total-4&&count<6;i++){
-    if(Math.random()<0.32){bridgeHoles[i]=true;count++;}
+  for(let i=3;i<total-4&&count<5;i++){
+    if(Math.random()<0.30){
+      bridgeHoles[i]=true; count++;
+      // 連続穴は最大1枚まで（2枚目でスキップ）
+      if(Math.random()<0.4&&i+1<total-4){bridgeHoles[i+1]=true;count++;i++;}
+      i++; // 必ず1枚ソリッドを挟む
+    }
   }
   if(!count) bridgeHoles[7]=true;
+  // 穴の上に丸太を配置（橋の中間～後半エリア）
+  bridgeLogs=[];
+  const logY=GY-96;
+  const logCandidates=[5,8,11,14,17,20];
+  const chosen=logCandidates.filter(()=>Math.random()<0.55).slice(0,3);
+  for(const lp of chosen){
+    // 穴の上か、その周辺に配置
+    bridgeLogs.push({bpos:lp*BPLANK_PITCH+BPLANK_W/2-18, y:logY});
+  }
   msg='橋だ！穴に落ちるな！'; msgT=230;
 }
 function spawnBridgeDebris(cx){
@@ -2079,18 +2257,41 @@ function updateBridge(){
       const pi=Math.floor(raw/BPLANK_PITCH);
       const wi=raw%BPLANK_PITCH;
       if(pi<bridgeHoles.length&&bridgeHoles[pi]&&wi<BPLANK_W){
-        invuln=true; invT=120; lives=Math.max(0,lives-1);
-        const ownedB=items.map((v,i)=>v?i:-1).filter(i=>i>=0);
-        let bridgeLostName='';
-        if(ownedB.length>0){
-          const lostB=ownedB[Math.floor(Math.random()*ownedB.length)];
-          items[lostB]=false; lostItems[lostB]=true; bridgeLostName=CHAIN[lostB].name;
+        invuln=true; invT=120;
+        const newLivesB=Math.max(0,lives-1);
+        if(newLivesB<=0&&items[2]&&!mikanUsed){
+          mikanUsed=true; lives=1;
+          msg='板が抜けた！みかんパワーで耐えた！'; msgT=240;
+        } else {
+          lives=newLivesB;
+          let bridgeLostName='';
+          if(items[3]&&Math.random()<0.50){
+            msg='板が抜けた！布で守った！HP-1'; msgT=240;
+          } else {
+            const ownedB=items.map((v,i)=>v?i:-1).filter(i=>i>=0);
+            if(ownedB.length>0){
+              const lostB=ownedB[Math.floor(Math.random()*ownedB.length)];
+              items[lostB]=false; lostItems[lostB]=true; bridgeLostName=CHAIN[lostB].name;
+            }
+            msg='板が抜けた！'+(bridgeLostName?bridgeLostName+'を落とした！':'ライフ-1'); msgT=240;
+          }
         }
         spawnBridgeDebris(PX+13);
         SFX.hit();
-        msg='板が抜けた！'+(bridgeLostName?bridgeLostName+'を落とした！':'ライフ-1'); msgT=240;
         [220,180,140].forEach((f,k)=>setTimeout(()=>beep(f,0.22,'sawtooth',0.13),k*90));
-        if(lives<=0){bridgeActive=false;state='gameover';SFX.over();}
+        if(lives<=0){bridgeActive=false;BGM.stop();state='gameover';SFX.over();}
+      }
+    }
+  }
+  // 丸太への着地判定
+  if(!grounded&&vy>0){
+    const rs=(dist-bridgeStartDist)*BSCROLL;
+    for(const log of bridgeLogs){
+      const lx=rr(GW+log.bpos-rs);
+      const ly=log.y;
+      const ph=46;
+      if(PX+22>lx&&PX+4<lx+36&&py+ph>=ly-1&&py+ph<=ly+8){
+        py=ly-ph; vy=0; grounded=true; break;
       }
     }
   }
@@ -2198,6 +2399,46 @@ function drawBridgeDebris(){
     ctx.fillRect(rr(d.x),rr(d.y),d.w,3);
   }
 }
+function drawBridgeLogs(){
+  if(!bridgeLogs||!bridgeLogs.length) return;
+  const rs=(dist-bridgeStartDist)*BSCROLL;
+  for(const log of bridgeLogs){
+    const lx=rr(GW+log.bpos-rs);
+    const ly=log.y;
+    if(lx<-40||lx>GW+10) continue;
+    const LW=36, LH=10;
+    // 影（水面に映る）
+    ctx.fillStyle='rgba(0,0,0,0.22)';
+    ctx.beginPath();ctx.ellipse(lx+LW/2,ly+LH+4,LW/2,4,0,0,Math.PI*2);ctx.fill();
+    // 丸太の丸み（左右の端面）
+    ctx.fillStyle='#2C1206';
+    ctx.beginPath();ctx.ellipse(lx,ly+LH/2,5,LH/2+1,0,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.ellipse(lx+LW,ly+LH/2,5,LH/2+1,0,0,Math.PI*2);ctx.fill();
+    // 本体アウトライン
+    ctx.fillStyle='#2C1206'; ctx.fillRect(lx,ly-1,LW,LH+2);
+    // 本体メイン（茶色）
+    ctx.fillStyle='#7B4A1A'; ctx.fillRect(lx,ly,LW,LH);
+    // 上面ハイライト
+    ctx.fillStyle='#9B6A3A'; ctx.fillRect(lx,ly,LW,3);
+    // 木目ライン
+    ctx.fillStyle='#5A3010';
+    ctx.fillRect(lx+4,ly+2,LW-8,1);
+    ctx.fillRect(lx+6,ly+5,LW-12,1);
+    ctx.fillRect(lx+3,ly+8,LW-6,1);
+    // 端面内輪（年輪っぽく）
+    ctx.fillStyle='#4A2808';
+    ctx.beginPath();ctx.ellipse(lx,ly+LH/2,2,LH/2-2,0,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.ellipse(lx+LW,ly+LH/2,2,LH/2-2,0,0,Math.PI*2);ctx.fill();
+    // 樹皮の凹凸（左端に苔っぽい色）
+    ctx.fillStyle='rgba(60,100,20,0.30)';
+    ctx.fillRect(lx,ly,5,LH);
+    // 縄で括った目印（中央）
+    ctx.fillStyle='#6A4010';
+    ctx.fillRect(lx+LW/2-1,ly-1,2,LH+2);
+    ctx.fillStyle='#C89040';
+    ctx.fillRect(lx+LW/2-1,ly,2,LH);
+  }
+}
 
 function update(){
   frame++;
@@ -2241,8 +2482,16 @@ function update(){
       else continue;
       if(sx<er&&sx+sw>el&&sy>=et&&sy<=et+16){
         e.alive=false; vy=-12; kickT=KICK_DUR;
-        invuln=true; invT=20;
-        msg='踏みつけ！'; msgT=90; SFX.kick();
+        invuln=true; invT=20; SFX.kick();
+        if(e.sub==='tanuki'){
+          const hr=items.reduce((m,v,i)=>v?i:m,-1);
+          const droppable=[0,1,2,3,4].filter(i=>!items[i]&&i<=hr+1);
+          if(droppable.length>0){
+            const di=droppable[Math.floor(Math.random()*droppable.length)];
+            entities.push({type:'drop',chainIdx:di,x:e.x,y:e.y-14,alive:true});
+            msg='タヌキ踏んだ！'+CHAIN[di].name+'をドロップ！'; msgT=180;
+          } else { msg='タヌキを踏んだ！'; msgT=100; }
+        } else { msg='踏みつけ！'; msgT=90; }
         break;
       }
     }
@@ -2262,10 +2511,15 @@ function update(){
     else if(items[1])              clearRank=6; // アブが最高
     else if(items[0])              clearRank=7; // わらのみ
     else                           clearRank=8; // 手ぶら
+    saveBest();
+    BGM.stop();
     state='ending';
     endT=0; endPlayerX=PX; endFade=0; endMansionX=GW+300;
     return;
   }
+  // ゴール接近演出
+  if(!goalWarn1&&dist>=GOAL_DIST*0.82){goalWarn1=true;msg='屋敷が見えてきた！もうすぐだ！';msgT=220;}
+  if(!goalWarn2&&dist>=GOAL_DIST*0.95){goalWarn2=true;msg='あと少し！！屋敷まで走れ！';msgT=200;}
 
   spawnEntity();
   updateBridge();
@@ -2345,19 +2599,43 @@ function update(){
               items=[false,false,false,false,false];
               msg='追い剥ぎに全部奪われた！HP-1'; msgT=300;
               [440,330,220].forEach((f,i)=>setTimeout(()=>beep(f,0.18,'sawtooth',0.14),i*90));
-              if(lives<=0){state='gameover'; SFX.over();}
+              if(lives<=0){BGM.stop();state='gameover'; SFX.over();}
             } else {
-              // HP-1 + ランダム1アイテムロスト
-              lives=Math.max(0,lives-1); invT=110;
-              const owned=items.map((v,i)=>v?i:-1).filter(i=>i>=0);
-              if(owned.length>0){
-                const li=owned[Math.floor(Math.random()*owned.length)];
-                items[li]=false; lostItems[li]=true;
-                msg=CHAIN[li].name+'を落とした！HP-1'; msgT=200;
-              } else {
-                msg='HP-1！'; msgT=160;
+              // アブ能力: カラスを40%確率で弾く
+              if(items[1]&&e.sub&&e.sub.startsWith('crow')&&Math.random()<0.40){
+                invuln=true; invT=40; e.alive=false;
+                msg='アブが払った！'; msgT=120; SFX.get(); return true;
               }
-              if(lives<=0){state='gameover'; SFX.over();}
+              // HP-1 + ランダム1アイテムロスト
+              const newLives=Math.max(0,lives-1);
+              // みかん能力: 瀕死を1回だけ耐える
+              if(newLives<=0&&items[2]&&!mikanUsed){
+                mikanUsed=true; lives=1; invT=110;
+                msg='みかんパワー！ギリギリ耐えた！'; msgT=220; SFX.get();
+              } else {
+                lives=newLives; invT=110;
+                // ぬの能力: アイテムロスト50%免除
+                if(items[3]&&Math.random()<0.50){
+                  msg='布で受け止めた！HP-1'; msgT=200;
+                } else {
+                  const owned=items.map((v,i)=>v?i:-1).filter(i=>i>=0);
+                  if(owned.length>0){
+                    const higher=owned.filter(i=>i>0);
+                    let li;
+                    if(items[0]&&higher.length>0&&Math.random()<0.35){
+                      li=0; msg='わらが身代わりになった！HP-1'; msgT=200;
+                    } else {
+                      li=owned[Math.floor(Math.random()*owned.length)];
+                      msg=CHAIN[li].name+'を落とした！HP-1'; msgT=200;
+                    }
+                    items[li]=false; lostItems[li]=true;
+                    if(li===2) mikanUsed=false;
+                  } else {
+                    msg='HP-1！'; msgT=160;
+                  }
+                }
+                if(lives<=0){BGM.stop();state='gameover'; SFX.over();}
+              }
             }
           }
         }
@@ -2366,26 +2644,20 @@ function update(){
           e.alive=false; npcPopX=e.x;
           const ci=e.chainIdx;
           const hr=items.reduce((m,v,i)=>v?i:m,-1);
-          if(ci===0){
-            if(!items[0]){
-              items[0]=true; lostItems[0]=false;
-              npcPopMsg='わらをあげよう！';
-              npcPopPMsg='やった！ありがとう！';
-            } else {
-              npcPopMsg='わらはもうあるね'; npcPopPMsg='うん…あります';
-            }
-          } else if(items[ci]){
-            npcPopMsg=CHAIN[ci].name+'はもうある？'; npcPopPMsg='うん…持ってます';
+          if(items[ci]){
+            npcPopMsg=CHAIN[ci].name+'はもう持ってる！'; npcPopPMsg='ありがとう！';
           } else if(hr===ci-1){
-            items[ci-1]=false; items[ci]=true; lostItems[ci]=false;
-            npcPopMsg=CHAIN[ci-1].name+'→'+CHAIN[ci].name+'交換！';
-            npcPopPMsg=(['まじで!? うれしい！','うそっ!? すごい！','布まで！最高！','馬！！夢みたい！'])[ci-1]||'やった！';
-          } else if(hr>ci){
+            // 交換演出（でも失わない）
             items[ci]=true; lostItems[ci]=false;
-            npcPopMsg=CHAIN[ci].name+'あげちゃおう！'; npcPopPMsg='え！ありがとう！';
+            npcPopMsg=(['わら→アブに交換しよう！','アブ→みかん交換しよう！','みかん→布に交換しよう！','布→馬に交換しよう！'])[ci-1]||'交換しよう！';
+            npcPopPMsg=(['まじで!? うれしい！','うそっ!? すごい！','布まで！最高！','馬！！夢みたい！'])[ci-1]||'やった！';
+          } else if(hr>ci-1){
+            // 上位を持っているので素直にくれる
+            items[ci]=true; lostItems[ci]=false;
+            npcPopMsg=CHAIN[ci].name+'をどうぞ！'; npcPopPMsg='え！ありがとう！';
           } else {
-            npcPopMsg=(ci>0?CHAIN[ci-1].name+'があれば…':'わらがあれば…');
-            npcPopPMsg=(['くぅ…もう少し！','もう少し…！','布…欲しいなぁ！','馬が欲しい！！'])[ci-1]||'もう少し！';
+            npcPopMsg=(['わらがあれば…','わらがあれば…','アブがあれば…','みかんがあれば…','布があれば…'])[ci]||'まだ早い…';
+            npcPopPMsg=(['くぅ…もう少し！','くぅ…もう少し！','もう少し…！','布…欲しいなぁ！','馬が欲しい！！'])[ci]||'もう少し！';
           }
           npcPopT=240; SFX.get();
         }
@@ -2395,7 +2667,7 @@ function update(){
           const ci=e.chainIdx;
           const hr=items.reduce((m,v,i)=>v?i:m,-1);
           if(items[ci]){
-            npcPopPMsg=CHAIN[ci].name+'もう持ってる…';
+            npcPopPMsg=CHAIN[ci].name+'はもう持ってる…';
           } else if(hr>=ci-1){
             items[ci]=true; lostItems[ci]=false;
             npcPopPMsg=CHAIN[ci].name+'を拾った！';
@@ -2426,47 +2698,36 @@ function drawFieldDrop(x,y,chainIdx,fr){
   const fy=rr(y+Math.sin(fr*0.11)*4);
   const hr=items.reduce((m,v,i)=>v?i:m,-1);
   const canGet=!items[chainIdx]&&hr>=chainIdx-1;
-  const W=26, H=26;
-  // パルスグロー
-  const pulseA=canGet?Math.round((0.5+Math.sin(fr*0.18)*0.3)*255).toString(16).padStart(2,'0'):'18';
+  const cx=x+14, cy=fy+14;
+  // パルスグロー（カードなし）
+  const pulseA=canGet?Math.round((0.32+Math.sin(fr*0.18)*0.18)*255).toString(16).padStart(2,'0'):'18';
   ctx.fillStyle=c.col+pulseA;
-  ctx.beginPath();ctx.arc(rr(x+W/2),rr(fy+H/2),26,0,Math.PI*2);ctx.fill();
-  // 枠
-  ctx.fillStyle='rgba(20,14,0,0.92)';
-  ctx.fillRect(rr(x),rr(fy),W,H);
-  ctx.fillStyle=canGet?c.col:'#4A3820';
-  ctx.fillRect(rr(x),rr(fy),W,2);
-  ctx.fillRect(rr(x),rr(fy+H-2),W,2);
-  ctx.fillRect(rr(x),rr(fy),2,H);
-  ctx.fillRect(rr(x+W-2),rr(fy),2,H);
-  // アイコン（大きく）
-  ctx.save();
-  ctx.translate(rr(x+W/2),rr(fy+H/2+2));
-  ctx.globalAlpha=canGet?1.0:0.35;
-  drawChainIcon(chainIdx,0.70);
+  ctx.beginPath();ctx.arc(cx,cy,26,0,Math.PI*2);ctx.fill();
+  // アイテム本体を直接・大きく描画
+  ctx.save(); ctx.translate(cx,cy+2);
+  ctx.globalAlpha=canGet?1.0:0.28;
+  drawChainIcon(chainIdx,1.35);
   ctx.globalAlpha=1; ctx.restore();
-  // 上位ブロック（×マーク）
+  // 持ってる場合は×
   if(!canGet&&!items[chainIdx]){
-    ctx.fillStyle='rgba(180,60,60,0.85)';
-    ctx.font='bold 13px monospace'; ctx.textAlign='center';
-    ctx.fillText('×',rr(x+W/2),rr(fy+H/2+5));
-    ctx.textAlign='left';
+    ctx.fillStyle='rgba(200,40,40,0.88)';
+    ctx.font='bold 16px monospace'; ctx.textAlign='center';
+    ctx.fillText('×',cx,cy+6); ctx.textAlign='left';
   }
-  // 名前ラベル（常時表示）
-  ctx.fillStyle=canGet?c.col:'rgba(120,90,50,0.85)';
+  // 名前ラベル
+  ctx.fillStyle=canGet?c.col:'rgba(120,90,50,0.7)';
   ctx.font='bold 8px monospace'; ctx.textAlign='center';
-  ctx.fillText(c.name,rr(x+W/2),rr(fy+H+9));
-  ctx.textAlign='left';
+  ctx.fillText(c.name,cx,rr(fy+34)); ctx.textAlign='left';
   // スパークル
   if(canGet){
     const sp=Math.floor(fr*0.18+chainIdx*1.3)%4;
-    const spos=[[x-5,fy+H/2],[x+W+3,fy+H/2],[x+W/2-1,fy-6],[x+W/2-1,fy+H+3]][sp];
+    const spos=[[x-8,cy],[x+36,cy],[cx,fy-10],[cx,fy+28]][sp];
     ctx.fillStyle=c.col;
     ctx.fillRect(rr(spos[0]),rr(spos[1]),3,3);
   }
   // 影
   ctx.fillStyle='rgba(0,0,0,0.18)';
-  ctx.beginPath();ctx.ellipse(rr(x+W/2),GY+3,13,3,0,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.ellipse(cx,GY+3,14,3,0,0,Math.PI*2);ctx.fill();
 }
 
 // ══════════════════════════════════════════════════════════
@@ -2558,6 +2819,25 @@ function triggerKick(){
 }
 
 // ══════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════
+// DRAW: SPEED LINES（速度線）
+// ══════════════════════════════════════════════════════════
+function drawSpeedLines(spd,fr){
+  if(spd<6.8) return;
+  const t=(spd-6.8)/2.2; // 0〜1（speed6.8→9）
+  const alpha=t*0.22;
+  const count=Math.round(6+t*10);
+  for(let i=0;i<count;i++){
+    const seed=(i*137+fr*11)%997;
+    const ly=((seed*1.61)%(GY-30))+8;
+    const len=rr(18+((seed*73)%52)*t);
+    const lx=GW-((fr*(spd*1.1)+seed*2.3)%(GW+80))%( GW+80);
+    if(lx+len<0||lx>GW) continue;
+    const bright=seed%3===0?'255,255,255':seed%3===1?'200,220,255':'255,240,200';
+    ctx.fillStyle=`rgba(${bright},${(alpha*(0.6+seed%10*0.04)).toFixed(2)})`;
+    ctx.fillRect(rr(lx),rr(ly),len,1);
+  }
+}
 // DRAW: HUD
 // ══════════════════════════════════════════════════════════
 function drawHUD(){
@@ -2780,6 +3060,15 @@ function drawClearScreen(){
   ctx.shadowBlur=0;
 
   ctx.fillStyle='rgba(240,180,0,0.40)'; ctx.fillRect(GW/2-110,rr(GH*0.52),220,2);
+  // ベスト記録
+  const best=loadBest();
+  if(best){
+    const grades=['SS','S','A','B','C','D','E','F','--'];
+    const isNewBest=best.rank===clearRank&&best.dist===Math.floor(dist)||best.rank>clearRank;
+    ctx.fillStyle=isNewBest?'#F0C820':'rgba(200,180,120,0.70)';
+    ctx.font=(isNewBest?'bold ':'')+'10px monospace'; ctx.textAlign='center';
+    ctx.fillText((isNewBest?'★ NEW BEST！  ':'最高記録：')+'Rank '+grades[best.rank]+'  '+best.dist+'歩',GW/2,rr(GH*0.57));
+  }
   drawClearChar(clearRank, GW/2, rr(GH*0.80));
 
   if(Math.floor(Date.now()/600)%2===0){
@@ -2810,6 +3099,12 @@ function drawStartScreen(){
 
   ctx.fillStyle='rgba(200,180,140,0.60)'; ctx.font='10px monospace';
   ctx.fillText('🪨 岩  ・  凧  ・  カラス×4種 を避けよう',GW/2,rr(GH*0.55));
+  const bestS=loadBest();
+  if(bestS){
+    const grades=['SS','S','A','B','C','D','E','F','--'];
+    ctx.fillStyle='rgba(240,200,60,0.80)'; ctx.font='bold 10px monospace';
+    ctx.fillText('最高記録  Rank '+grades[bestS.rank]+'  '+bestS.dist+'歩',GW/2,rr(GH*0.63));
+  }
 
   if(Math.floor(Date.now()/600)%2===0){
     ctx.fillStyle='#E8B800'; ctx.font='bold 14px monospace';
@@ -2845,6 +3140,34 @@ function drawGameOverScreen(){
   ctx.textAlign='left';
 }
 
+function drawPauseScreen(){
+  ctx.fillStyle='rgba(0,0,0,0.60)'; ctx.fillRect(0,0,GW,GH);
+  ctx.textAlign='center';
+  ctx.fillStyle='#E8C840'; ctx.font='bold 28px monospace';
+  ctx.fillText('一時停止',GW/2,rr(GH*0.22));
+  ctx.fillStyle='rgba(220,180,0,0.35)'; ctx.fillRect(GW/2-100,rr(GH*0.27),200,2);
+  ctx.fillStyle='#E0D0A0'; ctx.font='bold 11px monospace';
+  ctx.fillText('── アイテム能力 ──',GW/2,rr(GH*0.34));
+  const abilityLines=[
+    ['わら','他のアイテムの代わりに落ちる（35%）','#C8A030'],
+    ['アブ','カラスを弾く（40%）','#2A8808'],
+    ['みかん','瀕死の一撃を1回耐える','#E87818'],
+    ['ぬの','ダメージ時アイテムロス免除（50%）','#2858C0'],
+  ];
+  abilityLines.forEach(([name,desc,col],i)=>{
+    const ay=rr(GH*0.41+i*38);
+    ctx.fillStyle=col; ctx.font='bold 12px monospace';
+    ctx.fillText(name,GW/2,ay);
+    ctx.fillStyle='rgba(230,210,170,0.80)'; ctx.font='10px monospace';
+    ctx.fillText(desc,GW/2,ay+14);
+  });
+  ctx.fillStyle='rgba(220,180,0,0.35)'; ctx.fillRect(GW/2-100,rr(GH*0.78),200,2);
+  if(Math.floor(Date.now()/500)%2===0){
+    ctx.fillStyle='#E8B800'; ctx.font='bold 12px monospace';
+    ctx.fillText('タップ / P で再開',GW/2,rr(GH*0.84));
+  }
+  ctx.textAlign='left';
+}
 // ══════════════════════════════════════════════════════════
 // MAIN LOOP
 // ══════════════════════════════════════════════════════════
@@ -2862,7 +3185,7 @@ function loop(){
     drawWeather(STAGES[stageIdx||0].w, frame);
 
     if(state==='playing'){
-      update();
+      if(!paused) update();
       drawPlatforms();
       for(const e of entities){
         if(!e.alive) continue;
@@ -2900,9 +3223,18 @@ function loop(){
       drawPlayer(py,frame,invuln,items.filter(Boolean).length-1);
       ctx.shadowBlur=0; ctx.shadowColor='transparent';
       ctx.restore();
+      if(!paused) drawSpeedLines(speed,frame);
       drawNpcPopup();
       drawBridgeDebris();
+      if(bridgeActive) drawBridgeLogs();
       drawHUD();
+      // ポーズボタン（右上）
+      ctx.fillStyle=paused?'rgba(240,200,0,0.85)':'rgba(255,255,255,0.25)';
+      ctx.fillRect(GW-30,6,24,20);
+      ctx.fillStyle=paused?'#3A2000':'rgba(0,0,0,0.6)';
+      ctx.font='bold 11px monospace'; ctx.textAlign='center';
+      ctx.fillText(paused?'▶':'❙❙',GW-18,20); ctx.textAlign='left';
+      if(paused) drawPauseScreen();
       drawStageTransition();
       drawMessage();
     } else if(state==='gameover'){
@@ -2923,18 +3255,40 @@ function loop(){
 // ══════════════════════════════════════════════════════════
 // INPUT
 // ══════════════════════════════════════════════════════════
+function togglePause(){
+  if(state==='playing'){
+    paused=!paused;
+    if(paused)BGM.pause(); else BGM.resume();
+  }
+}
 function doAction(){
   tryFullscreen();
-  if(state==='ending') return; // エンディング中は入力無効
+  if(state==='ending') return;
+  if(paused){paused=false; return;}
   if(state==='clear'){state='start'; return;}
   if(state!=='playing'){initGame(); return;}
   if(grounded){vy=(items&&items[4])?JF*1.5:JF; grounded=false; SFX.jump();}
 }
 document.addEventListener('keydown',e=>{
   if(e.code==='Space'||e.code==='ArrowUp'){e.preventDefault(); doAction();}
+  if((e.code==='KeyP'||e.code==='Escape')&&state==='playing'){e.preventDefault(); togglePause();}
 });
-document.addEventListener('touchstart',e=>{e.preventDefault(); doAction();},{passive:false});
-document.addEventListener('click',()=>doAction());
+document.addEventListener('touchstart',e=>{
+  e.preventDefault();
+  const t=e.touches[0];
+  const rect=canvas.getBoundingClientRect();
+  const tx=(t.clientX-rect.left)*(GW/rect.width);
+  const ty=(t.clientY-rect.top)*(GH/rect.height);
+  if(state==='playing'&&tx>=GW-36&&ty<=36){togglePause();return;}
+  doAction();
+},{passive:false});
+document.addEventListener('click',e=>{
+  const rect=canvas.getBoundingClientRect();
+  const tx=(e.clientX-rect.left)*(GW/rect.width);
+  const ty=(e.clientY-rect.top)*(GH/rect.height);
+  if(state==='playing'&&tx>=GW-36&&ty<=36){togglePause();return;}
+  doAction();
+});
 
 requestAnimationFrame(loop);
 </script>
