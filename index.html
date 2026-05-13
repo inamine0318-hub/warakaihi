@@ -2201,9 +2201,9 @@ function spawnEntity(){
     const bambooOk=stageIdx>=1&&stageIdx<=2&&!bridgeActive;
     if(bambooOk&&o<0.14) e={type:'obstacle',sub:'bamboo',x:GW+30,y:GY,alive:true,phase:'stand',fallT:28};
     else if(o<0.18)       e={type:'obstacle',sub:'rock',        x:GW,    y:GY-20,vy:0,alive:true};
-    else if(o<0.30)  e={type:'obstacle',sub:'kite',        x:GW,    y:GY-128,vy:0,alive:true};
-    else if(o<0.50)  e={type:'obstacle',sub:'crow_front',  x:GW+10, y:GY-50,vy:0,alive:true};
-    else if(o<(lateGame?0.68:0.64)) e={type:'obstacle',sub:'crow_zigzag',x:GW+10,y:GY-80,vy:0,alive:true,phase:Math.random()*Math.PI*2};
+    else if(o<0.40)  e={type:'obstacle',sub:'kite',        x:GW,    y:GY-128,vy:0,alive:true};
+    else if(o<0.60)  e={type:'obstacle',sub:'crow_front',  x:GW+10, y:GY-50,vy:0,alive:true};
+    else if(o<(lateGame?0.78:0.74)) e={type:'obstacle',sub:'crow_zigzag',x:GW+10,y:GY-80,vy:0,alive:true,phase:Math.random()*Math.PI*2};
     else if(!bridgeActive&&dist>800&&o<(stageIdx>=3?0.94:0.90)){
       const ov=Math.random();
       const tChance=stageIdx>=3?0.12:0.28; // stage3以降はタヌキ減・追い剥ぎ増
