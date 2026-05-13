@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>わらしべ長者ランナー</title>
+<title>わらしべ走者</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 html,body{
@@ -3156,22 +3156,18 @@ function drawStartScreen(){
   ctx.fillStyle='rgba(250,210,20,0.75)';
   ctx.beginPath(); ctx.arc(cx,my,5,0,Math.PI*2); ctx.fill();
 
-  // タイトル「わらしべ長者」
-  const ty=rr(GH*0.435);
-  ctx.textAlign='center'; ctx.font='bold 32px monospace';
+  // タイトル「わらしべ走者」
+  const ty=rr(GH*0.445);
+  ctx.textAlign='center'; ctx.font='bold 30px monospace';
   // 影
-  ctx.fillStyle='rgba(0,0,0,0.65)'; ctx.fillText('わらしべ長者',cx+2,ty+3);
+  ctx.fillStyle='rgba(0,0,0,0.65)'; ctx.fillText('わらしべ走者',cx+2,ty+3);
   // グラデーション本体
   const tg=ctx.createLinearGradient(0,ty-27,0,ty+4);
   tg.addColorStop(0,'#FFF080'); tg.addColorStop(0.4,'#F4AC00'); tg.addColorStop(1,'#B05800');
-  ctx.fillStyle=tg; ctx.fillText('わらしべ長者',cx,ty);
-
-  // RUNNER サブタイトル
-  ctx.fillStyle='#C8A028'; ctx.font='bold 13px monospace';
-  ctx.fillText('R U N N E R',cx,rr(GH*0.510));
+  ctx.fillStyle=tg; ctx.fillText('わらしべ走者',cx,ty);
 
   // 区切り線（ひし形付き）
-  const dly=rr(GH*0.543);
+  const dly=rr(GH*0.508);
   ctx.strokeStyle='rgba(200,138,0,0.55)'; ctx.lineWidth=1;
   ctx.beginPath(); ctx.moveTo(cx-86,dly); ctx.lineTo(cx-20,dly); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(cx+20,dly); ctx.lineTo(cx+86,dly); ctx.stroke();
