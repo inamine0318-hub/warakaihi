@@ -1058,9 +1058,7 @@ function drawPlayer(py,frame,invuln,lv){
     [-1, 0, 2, 3,  2, -2,-3],
   ];
   const fr=Math.floor(frame/7)%4;
-  // 凧浮遊中：腕を上げてぶら下がりポーズ・足は下にダラン
-  const isKiteFloat=typeof kiteActive!=='undefined'&&kiteActive;
-  const [flx,fly,blx,bly,bob,fay,bay]=isKiteFloat?[0,7,0,7,0,-14,-14]:(isJump?[2,-5,-2,-5,0,-4,-4]:RF[fr]);
+  const [flx,fly,blx,bly,bob,fay,bay]=isJump?[2,-5,-2,-5,0,-4,-4]:RF[fr];
   const by=py+bob;
   const OL='#080402';
   const cc=lv>=3?(lv>=4?'#6A0C0C':'#184A8A'):lv<=0?'#9A7848':'#7A4818';
@@ -2366,7 +2364,7 @@ function updateBridge(){
     if(raw>=0){
       const pi=Math.floor(raw/BPLANK_PITCH);
       const wi=raw%BPLANK_PITCH;
-      if(pi<bridgeHoles.length&&bridgeHoles[pi]&&wi<BPLANK_W){
+      if(pi<bridgeHoles.length&&bridgeHoles[pi]&&wi<BPLANK_W&&py>=GY-52){
         invuln=true; invT=120;
         const newLivesB=Math.max(0,lives-1);
         if(newLivesB<=0&&items[2]&&!mikanUsed){
