@@ -60,7 +60,6 @@ function resize(){
     canvas.style.width=cw+'px'; canvas.style.height=ch+'px';
     wrap.style.width=cw+'px'; wrap.style.height=ch+'px';
   }
-  _fogGrad=null; // invalidate cached gradient on resize
 }
 resize();
 window.addEventListener('resize',resize);
@@ -193,6 +192,8 @@ const KICK_HOLD=24,KICK_DUR=22;
 // ══════════════════════════════════════════════════════════
 const _skyGradCache={};
 let _fogGrad=null;
+window.addEventListener('resize',()=>{_fogGrad=null;});
+window.addEventListener('orientationchange',()=>{_fogGrad=null;});
 function getSkyGrad(si){
   if(!_skyGradCache[si]){
     const s=STAGES[si];
