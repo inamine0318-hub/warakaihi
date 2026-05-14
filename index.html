@@ -191,9 +191,6 @@ const KICK_HOLD=24,KICK_DUR=22;
 // DRAW: BACKGROUND
 // ══════════════════════════════════════════════════════════
 const _skyGradCache={};
-let _fogGrad=null;
-window.addEventListener('resize',()=>{_fogGrad=null;});
-window.addEventListener('orientationchange',()=>{_fogGrad=null;});
 function getSkyGrad(si){
   if(!_skyGradCache[si]){
     const s=STAGES[si];
@@ -650,12 +647,10 @@ function drawEndingScene(){
 function drawWeather(weather,frame){
   if(weather==='rainy'){
     ctx.save(); ctx.strokeStyle='rgba(140,190,255,0.40)'; ctx.lineWidth=1;
-    ctx.beginPath();
     for(let i=0;i<55;i++){
       const rx=(i*31+frame*9)%(GW+40)-20, ry=(i*47+frame*15)%(GH+20)-10;
-      ctx.moveTo(rx,ry); ctx.lineTo(rx-4,ry+14);
+      ctx.beginPath(); ctx.moveTo(rx,ry); ctx.lineTo(rx-4,ry+14); ctx.stroke();
     }
-    ctx.stroke();
     ctx.restore();
   } else if(weather==='windy'){
     ctx.save(); ctx.strokeStyle='rgba(240,180,60,0.18)'; ctx.lineWidth=1.5;
@@ -3541,10 +3536,7 @@ function drawPauseScreen(){
 // ══════════════════════════════════════════════════════════
 stageIdx=0; frame=0;
 
-let _loopLast=0;
-function loop(ts){
-  if(ts!==undefined&&ts-_loopLast<14){requestAnimationFrame(loop);return;}
-  if(ts!==undefined) _loopLast=ts;
+function loop(){
   ctx.clearRect(0,0,GW,GH);
 
   if(state==='ending'){
@@ -3601,13 +3593,11 @@ function loop(ts){
       if(bridgeActive) drawBridgeLogs();
       // 雨の夜道：霧で視界制限
       if(stageIdx===2){
-        if(!_fogGrad){
-          _fogGrad=ctx.createLinearGradient(GW*0.18,0,GW,0);
-          _fogGrad.addColorStop(0,'rgba(6,4,10,0)');
-          _fogGrad.addColorStop(0.5,'rgba(6,4,10,0.30)');
-          _fogGrad.addColorStop(1,'rgba(6,4,10,0.68)');
-        }
-        ctx.fillStyle=_fogGrad; ctx.fillRect(0,0,GW,GH);
+        const fg=ctx.createLinearGradient(GW*0.18,0,GW,0);
+        fg.addColorStop(0,'rgba(6,4,10,0)');
+        fg.addColorStop(0.5,'rgba(6,4,10,0.30)');
+        fg.addColorStop(1,'rgba(6,4,10,0.68)');
+        ctx.fillStyle=fg; ctx.fillRect(0,0,GW,GH);
       }
       drawHUD();
       // ── わらしべアタックボタン（右下）
