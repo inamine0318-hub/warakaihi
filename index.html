@@ -3543,9 +3543,8 @@ stageIdx=0; frame=0;
 
 let _loopLast=0;
 function loop(ts){
-  requestAnimationFrame(loop);
-  if(ts-_loopLast<14) return; // ~70fps cap — skip frames on 120Hz to save CPU
-  _loopLast=ts;
+  if(ts!==undefined&&ts-_loopLast<14){requestAnimationFrame(loop);return;}
+  if(ts!==undefined) _loopLast=ts;
   ctx.clearRect(0,0,GW,GH);
 
   if(state==='ending'){
@@ -3702,6 +3701,7 @@ function loop(ts){
       frame++;
     }
   }
+  requestAnimationFrame(loop);
 }
 
 // ══════════════════════════════════════════════════════════
