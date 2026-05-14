@@ -2178,11 +2178,12 @@ function checkDoubleJumpUnlock(){
 }
 
 function progressiveDropIdx(){
+  // 全種類常に出るが重みが距離で変化（序盤は低レア多め、後半は高レア多め）
   const r=Math.random();
-  if(dist<600)       return r<0.62?0:1;           // わら・アブのみ
-  if(dist<1500)      return r<0.28?0:r<0.66?1:2;  // みかん解禁
-  if(dist<3000)      return r<0.18?1:r<0.58?2:3;  // ぬの解禁
-  return r<0.18?2:r<0.56?3:4;                     // うま解禁
+  if(dist<600)  return r<0.50?0:r<0.78?1:r<0.90?2:r<0.97?3:4;
+  if(dist<1500) return r<0.22?0:r<0.48?1:r<0.72?2:r<0.90?3:4;
+  if(dist<3000) return r<0.10?0:r<0.22?1:r<0.48?2:r<0.76?3:4;
+  return         r<0.06?0:r<0.14?1:r<0.32?2:r<0.62?3:4;
 }
 
 function spawnEntity(){
