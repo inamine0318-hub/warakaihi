@@ -191,6 +191,7 @@ const KICK_HOLD=24,KICK_DUR=22;
 // DRAW: BACKGROUND
 // ══════════════════════════════════════════════════════════
 const _skyGradCache={};
+let _fogGrad=null; // resize時は loop内で GW変化を検知してリセット
 function getSkyGrad(si){
   if(!_skyGradCache[si]){
     const s=STAGES[si];
@@ -647,10 +648,12 @@ function drawEndingScene(){
 function drawWeather(weather,frame){
   if(weather==='rainy'){
     ctx.save(); ctx.strokeStyle='rgba(140,190,255,0.40)'; ctx.lineWidth=1;
+    ctx.beginPath();
     for(let i=0;i<55;i++){
       const rx=(i*31+frame*9)%(GW+40)-20, ry=(i*47+frame*15)%(GH+20)-10;
-      ctx.beginPath(); ctx.moveTo(rx,ry); ctx.lineTo(rx-4,ry+14); ctx.stroke();
+      ctx.moveTo(rx,ry); ctx.lineTo(rx-4,ry+14);
     }
+    ctx.stroke();
     ctx.restore();
   } else if(weather==='windy'){
     ctx.save(); ctx.strokeStyle='rgba(240,180,60,0.18)'; ctx.lineWidth=1.5;
@@ -2173,14 +2176,6 @@ function checkDoubleJumpUnlock(){
   }
 }
 
-function progressiveDropIdx(){
-  const r=Math.random();
-  if(dist<600)  return r<0.50?0:r<0.78?1:r<0.90?2:r<0.97?3:4; // 序盤：わら・アブ中心
-  if(dist<1500) return r<0.22?0:r<0.44?1:r<0.63?2:r<0.82?3:4; // 中盤：均等に寄せる
-  if(dist<3000) return r<0.20?0:r<0.40?1:r<0.60?2:r<0.80?3:4; // 中後半：完全均等
-  return         r<0.20?0:r<0.40?1:r<0.60?2:r<0.80?3:4;        // 後半：完全均等
-}
-
 function spawnEntity(){
   const baseGap=Math.max(65, 110-dist*0.009);
   const rushBonus=stageIdx>=3?(stageIdx-2)*10:0; // stage3:-10, stage4:-20
@@ -2209,7 +2204,8 @@ function spawnEntity(){
   }
   else if(r>heartP) e={type:'heart',sub:'heart',x:GW+10,y:GY-50,vy:0,alive:true};
   else if(r>obstP){
-    e={type:'drop',chainIdx:progressiveDropIdx(),x:GW+10,y:GY-36,vy:0,alive:true};
+    const dropIdx=Math.floor(Math.random()*5);
+    e={type:'drop',chainIdx:dropIdx,x:GW+10,y:GY-36,vy:0,alive:true};
   }
   else{
     const o=Math.random();
@@ -2272,7 +2268,7 @@ function spawnPlatforms(){
     platforms.push({...pd,alive:true,crumbling:false,crumbleT:0,sinkAmt:0,
       hasItem:Math.random()<0.65?{
         type:Math.random()<0.22?'heart':'drop',
-        chainIdx:progressiveDropIdx(),
+        chainIdx:Math.floor(Math.random()*5),
         collected:false,
       }:null
     });
@@ -3591,13 +3587,16 @@ function loop(){
       drawNpcPopup();
       drawBridgeDebris();
       if(bridgeActive) drawBridgeLogs();
-      // 雨の夜道：霧で視界制限
+      // 雨の夜道：霧で視界制限（グラジエントをキャッシュして毎フレーム生成を防ぐ）
       if(stageIdx===2){
-        const fg=ctx.createLinearGradient(GW*0.18,0,GW,0);
-        fg.addColorStop(0,'rgba(6,4,10,0)');
-        fg.addColorStop(0.5,'rgba(6,4,10,0.30)');
-        fg.addColorStop(1,'rgba(6,4,10,0.68)');
-        ctx.fillStyle=fg; ctx.fillRect(0,0,GW,GH);
+        if(!_fogGrad||_fogGrad._gw!==GW){
+          _fogGrad=ctx.createLinearGradient(GW*0.18,0,GW,0);
+          _fogGrad.addColorStop(0,'rgba(6,4,10,0)');
+          _fogGrad.addColorStop(0.5,'rgba(6,4,10,0.30)');
+          _fogGrad.addColorStop(1,'rgba(6,4,10,0.68)');
+          _fogGrad._gw=GW;
+        }
+        ctx.fillStyle=_fogGrad; ctx.fillRect(0,0,GW,GH);
       }
       drawHUD();
       // ── わらしべアタックボタン（右下）
@@ -3756,6 +3755,5 @@ document.addEventListener('click',e=>{
 
 requestAnimationFrame(loop);
 </script>
-
 </body>
 </html>
