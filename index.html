@@ -990,28 +990,28 @@ function drawPlayerOnHorse(py,frame,invuln,lv){
 
 function drawKiteParachute(py,frame){
   const x=PX;
-  const pcx=x+12; // プレイヤー中心x
+  const pcx=x+12;
   const sway=Math.sin(frame*0.07)*6;
   const bob =Math.sin(frame*0.11)*3;
-
-  // 凧の中心位置（プレイヤーの真上）
   const kx=pcx+sway;
   const ky=py-52+bob;
+  const hw=20, hh=28;
 
-  // 糸（両手→凧の下端へ）
+  // 糸（2本まとめて1stroke）
   ctx.strokeStyle='#A09070'; ctx.lineWidth=1.5;
-  ctx.beginPath(); ctx.moveTo(rr(pcx-5),rr(py+4)); ctx.lineTo(rr(kx-8),rr(ky+28)); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(rr(pcx+5),rr(py+4)); ctx.lineTo(rr(kx+8),rr(ky+28)); ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(rr(pcx-5),rr(py+4)); ctx.lineTo(rr(kx-8),rr(ky+hh));
+  ctx.moveTo(rr(pcx+5),rr(py+4)); ctx.lineTo(rr(kx+8),rr(ky+hh));
+  ctx.stroke();
 
-  // 凧ボディ（4色ひし形・大きめ）
+  // 凧ボディ（4色ひし形）
   const col=['#56C8FF','#FFE840','#FF8890','#98E870'];
-  const hw=20, hh=28; // 半幅・半高さ
-  ctx.fillStyle=col[0]; // 上
+  ctx.fillStyle=col[0];
   ctx.beginPath(); ctx.moveTo(rr(kx),rr(ky-hh)); ctx.lineTo(rr(kx+hw),rr(ky)); ctx.lineTo(rr(kx),rr(ky)); ctx.closePath(); ctx.fill();
   ctx.beginPath(); ctx.moveTo(rr(kx),rr(ky-hh)); ctx.lineTo(rr(kx-hw),rr(ky)); ctx.lineTo(rr(kx),rr(ky)); ctx.closePath(); ctx.fill();
-  ctx.fillStyle=col[1]; // 左下
+  ctx.fillStyle=col[1];
   ctx.beginPath(); ctx.moveTo(rr(kx-hw),rr(ky)); ctx.lineTo(rr(kx),rr(ky+hh)); ctx.lineTo(rr(kx),rr(ky)); ctx.closePath(); ctx.fill();
-  ctx.fillStyle=col[2]; // 右下
+  ctx.fillStyle=col[2];
   ctx.beginPath(); ctx.moveTo(rr(kx+hw),rr(ky)); ctx.lineTo(rr(kx),rr(ky+hh)); ctx.lineTo(rr(kx),rr(ky)); ctx.closePath(); ctx.fill();
 
   // 輪郭
@@ -1021,29 +1021,30 @@ function drawKiteParachute(py,frame){
   ctx.lineTo(rr(kx),rr(ky+hh)); ctx.lineTo(rr(kx-hw),rr(ky));
   ctx.closePath(); ctx.stroke();
 
-  // 十字骨組み
+  // 十字骨組み（2本まとめて1stroke）
   ctx.strokeStyle='rgba(255,255,255,0.30)'; ctx.lineWidth=1;
-  ctx.beginPath(); ctx.moveTo(rr(kx),rr(ky-hh)); ctx.lineTo(rr(kx),rr(ky+hh)); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(rr(kx-hw),rr(ky)); ctx.lineTo(rr(kx+hw),rr(ky)); ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(rr(kx),rr(ky-hh)); ctx.lineTo(rr(kx),rr(ky+hh));
+  ctx.moveTo(rr(kx-hw),rr(ky)); ctx.lineTo(rr(kx+hw),rr(ky));
+  ctx.stroke();
 
-  // かわいい顔
+  // 顔（目: fillRect、口: quadraticCurve ← arc不使用）
   ctx.fillStyle='#335577';
-  ctx.beginPath(); ctx.arc(rr(kx-5),rr(ky-4),2,0,Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.arc(rr(kx+5),rr(ky-4),2,0,Math.PI*2); ctx.fill();
+  ctx.fillRect(rr(kx-7),rr(ky-6),3,3);
+  ctx.fillRect(rr(kx+4),rr(ky-6),3,3);
   ctx.strokeStyle='#335577'; ctx.lineWidth=1.5;
-  ctx.beginPath(); ctx.arc(rr(kx),rr(ky-1),3,0.2,Math.PI-0.2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(rr(kx-3),rr(ky-1)); ctx.quadraticCurveTo(rr(kx),rr(ky+2),rr(kx+3),rr(ky-1)); ctx.stroke();
 
-  // リボンしっぽ（5本・カラフル・よく揺れる）
-  const rc=['#FF6080','#FFE040','#56C8FF','#98E870','#FF90C8'];
+  // リボンしっぽ（5本まとめて1stroke）
+  ctx.strokeStyle='#FF8070'; ctx.lineWidth=2;
+  ctx.beginPath();
   for(let i=0;i<5;i++){
     const w1=Math.sin(frame*0.20+i*0.9)*11;
     const w2=Math.sin(frame*0.14+i*1.4)*7;
-    ctx.strokeStyle=rc[i]; ctx.lineWidth=2;
-    ctx.beginPath();
     ctx.moveTo(rr(kx),rr(ky+hh));
     ctx.quadraticCurveTo(rr(kx+w1),rr(ky+hh+14+i*8),rr(kx+w2),rr(ky+hh+26+i*10));
-    ctx.stroke();
   }
+  ctx.stroke();
 }
 
 function drawPlayer(py,frame,invuln,lv){
