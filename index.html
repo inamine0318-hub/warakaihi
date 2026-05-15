@@ -2128,12 +2128,15 @@ let stageTransT,prevStageIdx,kickT,kickHoldT,kickHolding;
 let goalWarn1,goalWarn2,paused;
 let horseFlashT,clearParts;
 let doubleJumped,kiteActive,kiteT,projectiles,attackCooldown,doubleJumpTaught,kiteTaught,attackTaught;
+let _savedNewBest=false;
 function saveBest(){
   try{
     const b=JSON.parse(localStorage.getItem('warashibe_best')||'null');
     const n={rank:clearRank,dist:Math.floor(dist)};
-    if(!b||n.rank<b.rank||(n.rank===b.rank&&n.dist>b.dist))
+    if(!b||n.rank<b.rank||(n.rank===b.rank&&n.dist>b.dist)){
       localStorage.setItem('warashibe_best',JSON.stringify(n));
+      _savedNewBest=true;
+    }
   }catch(e){}
 }
 function loadBest(){
@@ -2155,6 +2158,7 @@ function initGame(){
   platforms=[]; platSpawnD=0; platZigzag=0;
   endT=0; endPlayerX=PX; endFade=0; endMansionX=GW+300;
   doubleJumped=false; kiteActive=false; kiteT=0; projectiles=[]; attackCooldown=0; doubleJumpTaught=false; kiteTaught=false; attackTaught=false;
+  _savedNewBest=false;
   state='playing';
   BGM.start();
 }
@@ -3307,7 +3311,7 @@ function drawClearScreen(){
   // ベスト記録
   const best=loadBest();
   if(best){
-    const isNewBest=best.rank>clearRank||(best.rank===clearRank&&best.dist===Math.floor(dist));
+    const isNewBest=_savedNewBest;
     if(isNewBest){
       const nb=0.7+0.3*Math.sin(frame*0.20);
       ctx.shadowColor='#FFD700'; ctx.shadowBlur=14*nb;
