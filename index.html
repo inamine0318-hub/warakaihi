@@ -3338,31 +3338,36 @@ function drawClearScreen(){
 // ══════════════════════════════════════════════════════════
 function drawCart(e){
   const cx=rr(e.x), gy=GY, WR=13;
+  const ax=cx-25, ay=gy-WR; // 車輪の軸中心
   // 地面影
   ctx.fillStyle='rgba(0,0,0,0.18)';
-  ctx.beginPath(); ctx.ellipse(cx-25,gy+2,28,4,0,0,Math.PI*2); ctx.fill();
-  // 車輪（左）
+  ctx.beginPath(); ctx.ellipse(ax,gy+2,26,4,0,0,Math.PI*2); ctx.fill();
+  // 車輪（地面固定・傾きなし）
   ctx.fillStyle='#2E1806'; ctx.beginPath(); ctx.arc(cx-38,gy-WR,WR,0,Math.PI*2); ctx.fill();
   ctx.fillStyle='#6A3A10'; ctx.beginPath(); ctx.arc(cx-38,gy-WR,WR-3,0,Math.PI*2); ctx.fill();
-  // 車輪（右）
   ctx.fillStyle='#2E1806'; ctx.beginPath(); ctx.arc(cx-12,gy-WR,WR,0,Math.PI*2); ctx.fill();
   ctx.fillStyle='#6A3A10'; ctx.beginPath(); ctx.arc(cx-12,gy-WR,WR-3,0,Math.PI*2); ctx.fill();
-  // スポーク（両輪まとめて描画）
+  // スポーク（両輪まとめて）
   ctx.strokeStyle='#2E1806'; ctx.lineWidth=2;
   ctx.beginPath();
   for(let i=0;i<4;i++){const a=i*Math.PI/4,r=WR-4;ctx.moveTo(cx-38+Math.cos(a)*r,gy-WR+Math.sin(a)*r);ctx.lineTo(cx-38-Math.cos(a)*r,gy-WR-Math.sin(a)*r);}
   for(let i=0;i<4;i++){const a=i*Math.PI/4,r=WR-4;ctx.moveTo(cx-12+Math.cos(a)*r,gy-WR+Math.sin(a)*r);ctx.lineTo(cx-12-Math.cos(a)*r,gy-WR-Math.sin(a)*r);}
   ctx.stroke();
+  // 荷台・轅を軸中心に傾ける（轅が上を向いた駐車状態）
+  ctx.save();
+  ctx.translate(ax,ay);
+  ctx.rotate(-0.45);
   // 車軸
-  ctx.fillStyle='#5A3010'; ctx.fillRect(cx-51,gy-WR-1,51,3);
+  ctx.fillStyle='#5A3010'; ctx.fillRect(-26,-1,51,3);
   // 荷台
-  ctx.fillStyle='#8A5020'; ctx.fillRect(cx-51,gy-WR*2-4,44,WR+2);
-  ctx.fillStyle='#5A3010'; ctx.fillRect(cx-51,gy-WR*2-4,44,3);
-  ctx.fillStyle='#5A3010'; ctx.fillRect(cx-51,gy-WR*2-4,3,WR+2);
-  ctx.fillStyle='#5A3010'; ctx.fillRect(cx-10,gy-WR*2-4,3,WR+2);
-  ctx.fillStyle='#9A6030'; ctx.fillRect(cx-36,gy-WR*2-1,2,WR); ctx.fillRect(cx-22,gy-WR*2-1,2,WR);
+  ctx.fillStyle='#8A5020'; ctx.fillRect(-26,-WR-4,44,WR+2);
+  ctx.fillStyle='#5A3010'; ctx.fillRect(-26,-WR-4,44,3);
+  ctx.fillStyle='#5A3010'; ctx.fillRect(-26,-WR-4,3,WR+2);
+  ctx.fillStyle='#5A3010'; ctx.fillRect(15,-WR-4,3,WR+2);
+  ctx.fillStyle='#9A6030'; ctx.fillRect(-11,-WR-1,2,WR); ctx.fillRect(3,-WR-1,2,WR);
   // 轅（ながえ）
-  ctx.fillStyle='#7A4A18'; ctx.fillRect(cx-7,gy-WR*2+3,28,3); ctx.fillRect(cx-7,gy-WR*2+9,28,3);
+  ctx.fillStyle='#7A4A18'; ctx.fillRect(18,-WR+3,28,3); ctx.fillRect(18,-WR+9,28,3);
+  ctx.restore();
 }
 
 function drawStartScreen(){
