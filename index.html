@@ -165,8 +165,8 @@ const BGM=(()=>{
   function _tick(){
     if(!_on)return;
     const s=_step;const[mf,md]=_seq[s];
-    _n(mf,md,'triangle',0.052);
-    if(s%4===0){const[bf,bd]=_bas[(_bi++)%_bas.length];_n(bf,bd,'sawtooth',0.036);}
+    _n(mf,md,'triangle',0.15);
+    if(s%4===0){const[bf,bd]=_bas[(_bi++)%_bas.length];_n(bf,bd,'sawtooth',0.10);}
     _step=(s+1)%_seq.length;
     const id=++_id;
     _to=setTimeout(()=>{if(_id===id)_tick();},md);
@@ -2210,8 +2210,8 @@ function spawnEntity(){
   else{
     const o=Math.random();
     const lateGame=dist>2000;
-    const bambooOk=stageIdx>=1&&stageIdx<=2&&!bridgeActive;
-    if(bambooOk&&o<0.14) e={type:'obstacle',sub:'bamboo',x:GW+30,y:GY,alive:true,phase:'stand',fallT:28};
+    const cartOk=stageIdx>=1&&stageIdx<=2&&!bridgeActive;
+    if(cartOk&&o<0.14) e={type:'obstacle',sub:'cart',x:GW+30,y:GY,alive:true};
     else if(o<0.18)       e={type:'obstacle',sub:'rock',        x:GW,    y:GY-20,vy:0,alive:true};
     else if(o<0.40){e={type:'obstacle',sub:'kite',x:GW,y:GY-128,vy:0,alive:true};
       if(!kiteTaught){kiteTaught=true;msg='凧にジャンプで触れると浮ける！';msgT=190;}}
@@ -2711,16 +2711,8 @@ function update(){
       }
       else { e.x-=sp*0.70; }
     }
-    else if(e.sub==='bamboo'){
-      if(e.phase==='stand'){
-        e.x-=sp*0.85;
-        if(e.x<GW*0.82){e.phase='fall'; SFX.creak();}
-      } else if(e.phase==='fall'){
-        e.x-=sp*0.22;
-        if(--e.fallT<=0){e.phase='fallen'; SFX.thud();}
-      } else {
-        e.x-=sp*0.85;
-      }
+    else if(e.sub==='cart'){
+      e.x-=sp*0.85;
     }
     else if(e.sub==='kite'){
       e.x-=sp*0.52;
@@ -2734,7 +2726,6 @@ function update(){
     if(!invuln){
       const m=8, px_=PX+m, py_=py+m, pw=14, ph=26;
       if(e.type==='obstacle'){
-        if(e.sub==='bamboo'&&e.phase!=='fallen') return true;
         // 凧：ダメージなし → つかまって浮遊モード
         if(e.sub==='kite'){
           if(aabb(px_,py_,pw,ph,e.x+8,e.y+8,14,16)&&!kiteActive){
@@ -2759,7 +2750,7 @@ function update(){
           const lunge=e.phase==='lunge';
           ex=lunge?e.x-12:e.x+4; ey=e.y+10; ew=lunge?34:20; eh=40;
         }
-        else if(e.sub==='bamboo')      {ex=e.x-52; ey=GY-11; ew=52; eh=11;}
+        else if(e.sub==='cart')        {ex=e.x-51; ey=GY-28; ew=51; eh=28;}
         else                           {ex=e.x-8+m; ey=e.y-8+m; ew=20-m;   eh=16-m;}
         if(aabb(px_,py_,pw,ph,ex,ey,ew,eh)){
           if(items&&items[4]&&e.sub&&e.sub.startsWith('oihagi')){
@@ -3345,48 +3336,35 @@ function drawClearScreen(){
 }
 
 // ══════════════════════════════════════════════════════════
-// DRAW: 竹（倒れるギミック）
+// DRAW: 荷車（障害物）
 // ══════════════════════════════════════════════════════════
-function drawBamboo(e){
-  const BH=52,BW=9;
-  const bx=rr(e.x);
-  if(e.phase==='fallen'){
-    // 横倒しの竹丸太
-    ctx.fillStyle='#1A0800'; ctx.fillRect(bx-BH-1,GY-BW-1,BH+2,BW+2);
-    ctx.fillStyle='#2A6012'; ctx.fillRect(bx-BH,GY-BW,BH,BW);
-    ctx.fillStyle='#1E4A0A';
-    for(let s=1;s<4;s++) ctx.fillRect(bx-rr(BH*s/4)-1,GY-BW,3,BW);
-    ctx.fillStyle='#3A7820'; ctx.fillRect(bx-BH,GY-BW,BH,2);
-    // 葉（飛散）
-    ctx.fillStyle='#286010';
-    ctx.fillRect(bx-BH-10,GY-10,14,7); ctx.fillRect(bx-BH-5,GY-17,9,8);
-    // 根元の切断面
-    ctx.fillStyle='#B89848'; ctx.fillRect(bx-4,GY-BW-1,BW+1,BW+2);
-    ctx.fillStyle='#D4B860'; ctx.fillRect(bx-2,GY-BW+1,BW-2,BW-2);
-    ctx.fillStyle='rgba(0,0,0,0.16)'; ctx.fillRect(bx-BH,GY,BH,3);
-    return;
-  }
-  // 立っている・倒れ中
-  const progress = 1-e.fallT/28;
-  const angle = -progress * Math.PI * 0.5; // 0=垂直 → -PI/2=水平（左に倒れる）
-  ctx.save();
-  ctx.translate(bx, GY);
-  ctx.rotate(angle);
-  // 幹
-  ctx.fillStyle='#1A0800'; ctx.fillRect(-BW/2-1,-BH-1,BW+2,BH+2);
-  ctx.fillStyle='#2A6012'; ctx.fillRect(-BW/2,-BH,BW,BH);
-  ctx.fillStyle='#1E4A0A';
-  for(let s=1;s<4;s++) ctx.fillRect(-BW/2,-rr(BH*s/4),BW,2);
-  ctx.fillStyle='#3A7820'; ctx.fillRect(-BW/2+1,-BH,2,BH);
-  // 先端の葉
-  ctx.fillStyle='#266010';
-  ctx.fillRect(-BW/2-7,-BH-2,BW+14,5); ctx.fillRect(-BW/2-4,-BH-7,BW+9,6);
-  ctx.fillStyle='#347018';
-  ctx.fillRect(-BW/2-1,-BH-5,5,3); ctx.fillRect(-BW/2+4,-BH-6,4,4);
-  ctx.restore();
-  // 根元の影
-  ctx.fillStyle='rgba(0,0,0,0.14)';
-  ctx.beginPath(); ctx.ellipse(bx,GY+3,10,3,0,0,Math.PI*2); ctx.fill();
+function drawCart(e){
+  const cx=rr(e.x), gy=GY, WR=13;
+  // 地面影
+  ctx.fillStyle='rgba(0,0,0,0.18)';
+  ctx.beginPath(); ctx.ellipse(cx-25,gy+2,28,4,0,0,Math.PI*2); ctx.fill();
+  // 車輪（左）
+  ctx.fillStyle='#2E1806'; ctx.beginPath(); ctx.arc(cx-38,gy-WR,WR,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#6A3A10'; ctx.beginPath(); ctx.arc(cx-38,gy-WR,WR-3,0,Math.PI*2); ctx.fill();
+  // 車輪（右）
+  ctx.fillStyle='#2E1806'; ctx.beginPath(); ctx.arc(cx-12,gy-WR,WR,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#6A3A10'; ctx.beginPath(); ctx.arc(cx-12,gy-WR,WR-3,0,Math.PI*2); ctx.fill();
+  // スポーク（両輪まとめて描画）
+  ctx.strokeStyle='#2E1806'; ctx.lineWidth=2;
+  ctx.beginPath();
+  for(let i=0;i<4;i++){const a=i*Math.PI/4,r=WR-4;ctx.moveTo(cx-38+Math.cos(a)*r,gy-WR+Math.sin(a)*r);ctx.lineTo(cx-38-Math.cos(a)*r,gy-WR-Math.sin(a)*r);}
+  for(let i=0;i<4;i++){const a=i*Math.PI/4,r=WR-4;ctx.moveTo(cx-12+Math.cos(a)*r,gy-WR+Math.sin(a)*r);ctx.lineTo(cx-12-Math.cos(a)*r,gy-WR-Math.sin(a)*r);}
+  ctx.stroke();
+  // 車軸
+  ctx.fillStyle='#5A3010'; ctx.fillRect(cx-51,gy-WR-1,51,3);
+  // 荷台
+  ctx.fillStyle='#8A5020'; ctx.fillRect(cx-51,gy-WR*2-4,44,WR+2);
+  ctx.fillStyle='#5A3010'; ctx.fillRect(cx-51,gy-WR*2-4,44,3);
+  ctx.fillStyle='#5A3010'; ctx.fillRect(cx-51,gy-WR*2-4,3,WR+2);
+  ctx.fillStyle='#5A3010'; ctx.fillRect(cx-10,gy-WR*2-4,3,WR+2);
+  ctx.fillStyle='#9A6030'; ctx.fillRect(cx-36,gy-WR*2-1,2,WR); ctx.fillRect(cx-22,gy-WR*2-1,2,WR);
+  // 轅（ながえ）
+  ctx.fillStyle='#7A4A18'; ctx.fillRect(cx-7,gy-WR*2+3,28,3); ctx.fillRect(cx-7,gy-WR*2+9,28,3);
 }
 
 function drawStartScreen(){
@@ -3575,7 +3553,7 @@ function loop(){
           ctx.restore();
         }
         else if(e.sub==='heart')          drawHeart(e.x,e.y,frame);
-        else if(e.sub==='bamboo')         drawBamboo(e);
+        else if(e.sub==='cart')            drawCart(e);
       }
       ctx.save();
       ctx.translate(rr(PX+13),GY); ctx.scale(PSCALE,PSCALE); ctx.translate(-rr(PX+13),-GY);
@@ -3587,17 +3565,6 @@ function loop(){
       drawNpcPopup();
       drawBridgeDebris();
       if(bridgeActive) drawBridgeLogs();
-      // 雨の夜道：霧で視界制限（グラジエントをキャッシュして毎フレーム生成を防ぐ）
-      if(stageIdx===2){
-        if(!_fogGrad||_fogGrad._gw!==GW){
-          _fogGrad=ctx.createLinearGradient(GW*0.18,0,GW,0);
-          _fogGrad.addColorStop(0,'rgba(6,4,10,0)');
-          _fogGrad.addColorStop(0.5,'rgba(6,4,10,0.30)');
-          _fogGrad.addColorStop(1,'rgba(6,4,10,0.68)');
-          _fogGrad._gw=GW;
-        }
-        ctx.fillStyle=_fogGrad; ctx.fillRect(0,0,GW,GH);
-      }
       drawHUD();
       // ── わらしべアタックボタン（右下）
       if(!paused){
