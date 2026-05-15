@@ -327,13 +327,6 @@ function drawBG(dist,si){
       const dx=((i*90-dist*6.8)%(90*14)+90*14)%(90*14)-45;
       ctx.fillRect(rr(dx),GY+8,42,3);
     }
-    if(si===2){
-      ctx.fillStyle='rgba(60,80,120,0.30)';
-      for(let i=0;i<6;i++){
-        const px_=((i*180-dist*5)%(180*6)+180*6)%(180*6)-40;
-        ctx.beginPath(); ctx.ellipse(rr(px_+20),GY+12,22,5,0,0,Math.PI*2); ctx.fill();
-      }
-    }
   }
 }
 
