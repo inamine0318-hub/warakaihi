@@ -2197,7 +2197,7 @@ function spawnEntity(){
   const rushBonus=stageIdx>=3?(stageIdx-2)*10:0; // stage3:-10, stage4:-20
   const minGap=Math.max(42, baseGap-rushBonus);
   if(dist-spawnD < minGap+Math.random()*90) return;
-  if(entities.length>=12) return;
+  if(stageIdx>=4&&entities.length>=14) return;
   spawnD=dist;
   const obstP=Math.min(0.84, 0.74+dist*0.000015);
   const heartP=obstP+0.06;
