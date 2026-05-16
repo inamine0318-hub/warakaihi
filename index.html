@@ -2643,8 +2643,10 @@ function update(){
           const droppable=[0,1,2,3,4].filter(i=>!items[i]&&i<=hr+1);
           if(droppable.length>0){
             const di=droppable[Math.floor(Math.random()*droppable.length)];
-            entities.push({type:'drop',chainIdx:di,x:e.x,y:e.y-14,alive:true});
-            msg='タヌキ踏んだ！'+CHAIN[di].name+'をドロップ！'; msgT=180;
+            items[di]=true; lostItems[di]=false;
+            if(di===4){horseFlashT=90;SFX.neigh();}
+            checkDoubleJumpUnlock();
+            msg='タヌキ踏んだ！'+CHAIN[di].name+'をゲット！'; msgT=180; SFX.get();
           } else { msg='タヌキを踏んだ！'; msgT=100; }
         } else { msg='踏みつけ！'; msgT=90; }
         break;
